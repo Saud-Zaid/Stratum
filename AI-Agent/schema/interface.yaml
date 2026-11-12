@@ -1,0 +1,44 @@
+schema_version: 1.0.0
+created: 2026-10-18
+enforcement: validate+hook
+sources:
+  g06_baseline:
+    file: AI-Agent/g06_baseline.json
+    required_keys:
+    - version
+    - content_hash
+    - metrics
+    version_min: 1.0.0
+    hash_algo: sha256
+  contracts:
+    file: AI-Agent/contracts
+    expected_files:
+    - decision-log-v1.0.0.json
+    - skill-record-v1.0.0.json
+    required_keys:
+    - id
+    - version
+    - content_hash
+    - changelog
+    - review_by
+  kill_switch:
+    file: AI-Agent/state/kill-switch-state.json
+    allowed_status:
+    - RUN
+    - HALT
+    halt_blocks_build: true
+  permanent_layer:
+    cap_tokens: 1300
+    file: AI-Agent/permanent-layer.md
+    measured_tokens: 443
+    static_childhood_tokens: 443
+  decision_ledger:
+    file: AI-Agent/state/decision-ledger.sqlite3
+    unit: AI-Agent/schema/decision_ledger.py
+    version: 1.0.0
+    opening_entry: static_childhood
+    injection_log: AI-Agent/state/injection-log.jsonl
+    injection_fixture: AI-Agent/tests/fixtures/injection_fixture.py
+    fixture_version: 1.0.0
+    cap_tokens: 1300
+    enforcement: enforce_injection

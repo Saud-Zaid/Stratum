@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+# vault-python — the one entry point for running AI-Agent/scripts on a host without the sandbox.
+#
+# The Claude-side sandbox sets VAULT and PYTHONPATH itself (AD02 M32: libraries read-only at
+# /opt/pylib). Off the sandbox — this machine, or a Codex/Gemini/Goose session — nothing sets
+# them, so scripts fail on "No module named 'mdit_py_plugins'" or on VAULT=/vault. This wrapper
+# fills both defaults and never overwrites an environment that already provides them:
+#
+#   VAULT       $VAULT, else the vault root this file sits in (AI-Agent/..)
+#   PYTHONPATH  the caller's, plus the first pinned library folder that exists:
+#               $VAULT_PYLIB, $VAULT/AI-Agent/pylib, ~/.stratum/vault-pylib, /opt/pylib
+#
+# Usage: AI-Agent/vault-python AI-Agent/scripts/state.py [args]
+#        AI-Agent/vault-python --env                 # resolved VAULT/PYTHONPATH/python
+#        VAULT_PYLIB=/path/to/pylib AI-Agent/vault-python AI-Agent/scripts/audit.py --ratchet
+#
+# Dependencies are pinned in AI-Agent/requirements.txt and installed outside the vault:
+#   uv pip install --target ~/.stratum/vault-pylib -r AI-Agent/requirements.txt
+# Add a library by editing requirements.txt, re-running that install, then none of the
+# call sites change: they all go through here.
+set -eu
+
+self="${BASH_SOURCE[0]}"
+while [ -L "$self" ]; do self="$(readlink "$self")"; done
+here="$(cd "$(dirname "$self")" && pwd)"
+VAULT="${VAULT:-$(cd "$here/.." && pwd)}"
+export VAULT
+
+pylibs=""
+for cand in "${VAULT_PYLIB:-}" "$VAULT/AI-Agent/pylib" "$HOME/.stratum/vault-pylib" "/opt/pylib"; do
+  if [ -n "$cand" ] && [ -d "$cand" ]; then
+    if [ -z "$pylibs" ]; then pylibs="$cand"; else pylibs="$pylibs:$cand"; fi
+  fi
+done
+if [ -n "$pylibs" ]; then
+  PYTHONPATH="${PYTHONPATH:+$PYTHONPATH:}$pylibs"
+  export PYTHONPATH
+else
+  echo "vault-python: no pinned library folder found — checked VAULT_PYLIB, $VAULT/AI-Agent/pylib, $HOME/.stratum/vault-pylib, /opt/pylib." >&2
+  echo "  install: uv pip install --target $HOME/.stratum/vault-pylib -r $VAULT/AI-Agent/requirements.txt" >&2
+fi
+
+export TIKTOKEN_CACHE_DIR="${TIKTOKEN_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/tiktoken}"
+
+if [ -n "${VAULT_PYTHON:-}" ]; then
+  py="$VAULT_PYTHON"
+elif [ -x "$VAULT/.venv/bin/python" ]; then
+  py="$VAULT/.venv/bin/python"
+elif command -v python3.13 >/dev/null 2>&1; then
+  py="$(command -v python3.13)"
+elif command -v uv >/dev/null 2>&1 && uv_py="$(uv python find 3.13 2>/dev/null || true)" && [ -n "$uv_py" ] && [ -x "$uv_py" ]; then
+  py="$uv_py"
+else
+  py="python3"
+fi
+
+# Lock stamp (U-49): setup writes sha256(uv.lock) to .venv/.stratum-lock-sha256. Only when the vault's own .venv is the
+# interpreter (not VAULT_PYLIB or /opt/pylib), a stale stamp warns once on stderr; it never blocks.
+if [ "$py" = "$VAULT/.venv/bin/python" ] && [ -f "$VAULT/uv.lock" ] && [ -f "$VAULT/.venv/.stratum-lock-sha256" ]; then
+  if command -v sha256sum >/dev/null 2>&1; then want="$(sha256sum "$VAULT/uv.lock" | cut -d' ' -f1)"; else want="$(shasum -a 256 "$VAULT/uv.lock" | cut -d' ' -f1)"; fi
+  have="$(tr -d '[:space:]' < "$VAULT/.venv/.stratum-lock-sha256")"
+  if [ "$want" != "$have" ]; then
+    echo "vault-python: .venv is older than uv.lock — run ./setup.sh to refresh it." >&2
+  fi
+fi
+
+if [ "${1:-}" = "--env" ]; then
+  printf 'python="%s"\nVAULT="%s"\nPYTHONPATH="%s"\nTIKTOKEN_CACHE_DIR="%s"\n' "$py" "$VAULT" "${PYTHONPATH:-}" "$TIKTOKEN_CACHE_DIR"
+  exit 0
+fi
+
+exec "$py" "$@"

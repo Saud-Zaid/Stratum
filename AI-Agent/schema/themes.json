@@ -1,0 +1,279 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AD13 Semantic Palette & Dark Theme Matrix",
+  "description": "Unified visual identity and dark contrast themes for architecture diagrams, SVG generation, and terminal interfaces.",
+  "version": "1.0.0",
+  "default_theme": "catppuccin_macchiato",
+  "semantic_palette": {
+    "governance": {
+      "name_en": "Governance & Security",
+      "primary": "#8b5cf6",
+      "container_bg": "#1e1338",
+      "border": "#a78bfa",
+      "text": "#ede9fe",
+      "description": "audit.py, pre-commit, arch_contract, decision-ledger"
+    },
+    "execution": {
+      "name_en": "Execution & Agents",
+      "primary": "#06b6d4",
+      "container_bg": "#082f49",
+      "border": "#22d3ee",
+      "text": "#cffafe",
+      "description": "Primary Agent, Subagents, agent_loop, c7_harness"
+    },
+    "knowledge": {
+      "name_en": "Knowledge & Storage",
+      "primary": "#10b981",
+      "container_bg": "#064e3b",
+      "border": "#34d399",
+      "text": "#d1fae5",
+      "description": "PARA Structure, Zettelkasten, MOCs, Templates"
+    },
+    "decision": {
+      "name_en": "Decision Forks",
+      "primary": "#f59e0b",
+      "container_bg": "#451a03",
+      "border": "#fbbf24",
+      "text": "#fef3c7",
+      "description": "Jev MCP Client, decision forks, confidence scores"
+    },
+    "alert": {
+      "name_en": "Critical Alerts",
+      "primary": "#ef4444",
+      "container_bg": "#450a0a",
+      "border": "#f87171",
+      "text": "#fee2e2",
+      "description": "Blocking Gates, Context Collapse, Token Tax Spikes"
+    },
+    "neutral": {
+      "name_en": "Neutral & Interfaces",
+      "primary": "#64748b",
+      "container_bg": "#0f172a",
+      "border": "#94a3b8",
+      "text": "#f1f5f9",
+      "description": "the owner UI Controls, Obsidian Bridge, Topology Grids"
+    }
+  },
+  "themes": {
+    "catppuccin_macchiato": {
+      "id": "catppuccin_macchiato",
+      "name": "Catppuccin Macchiato",
+      "description": "Calming, modern pastel dark theme (Default for diagrams and graph views)",
+      "canvas_bg": "#24273a",
+      "card_bg": "#1e2030",
+      "card_surface": "#363a4f",
+      "text_primary": "#cad3f5",
+      "text_muted": "#a5adcb",
+      "border": "#5b6078",
+      "accent": "#c6a0f6",
+      "roles": {
+        "governance": {
+          "bg": "#2a2244",
+          "border": "#c6a0f6",
+          "text": "#f5e0dc"
+        },
+        "execution": {
+          "bg": "#1b3247",
+          "border": "#8bd5ca",
+          "text": "#cad3f5"
+        },
+        "knowledge": {
+          "bg": "#1c3836",
+          "border": "#a6da95",
+          "text": "#cad3f5"
+        },
+        "decision": {
+          "bg": "#3e2f23",
+          "border": "#eed49f",
+          "text": "#eed49f"
+        },
+        "alert": {
+          "bg": "#3d1f2d",
+          "border": "#ed8796",
+          "text": "#f5bde6"
+        },
+        "neutral": {
+          "bg": "#1e2030",
+          "border": "#6e738d",
+          "text": "#a5adcb"
+        }
+      }
+    },
+    "tokyo_night": {
+      "id": "tokyo_night",
+      "name": "Tokyo Night",
+      "description": "Sleek, high-elegance neon cyberpunk dark theme",
+      "canvas_bg": "#1a1b26",
+      "card_bg": "#16161e",
+      "card_surface": "#24283b",
+      "text_primary": "#c0caf5",
+      "text_muted": "#9aa5ce",
+      "border": "#414868",
+      "accent": "#7aa2f7",
+      "roles": {
+        "governance": {
+          "bg": "#221c3b",
+          "border": "#bb9af7",
+          "text": "#f7768e"
+        },
+        "execution": {
+          "bg": "#16283b",
+          "border": "#7dcfff",
+          "text": "#c0caf5"
+        },
+        "knowledge": {
+          "bg": "#142d2b",
+          "border": "#73daca",
+          "text": "#c0caf5"
+        },
+        "decision": {
+          "bg": "#36291a",
+          "border": "#e0af68",
+          "text": "#e0af68"
+        },
+        "alert": {
+          "bg": "#3b1824",
+          "border": "#f7768e",
+          "text": "#f7768e"
+        },
+        "neutral": {
+          "bg": "#1f2335",
+          "border": "#565f89",
+          "text": "#9aa5ce"
+        }
+      }
+    },
+    "dracula": {
+      "id": "dracula",
+      "name": "Dracula",
+      "description": "High-contrast standard dark theme for CLI, code snippets, and terminal logs",
+      "canvas_bg": "#282a36",
+      "card_bg": "#21222c",
+      "card_surface": "#44475a",
+      "text_primary": "#f8f8f2",
+      "text_muted": "#bfbfbf",
+      "border": "#6272a4",
+      "accent": "#bd93f9",
+      "roles": {
+        "governance": {
+          "bg": "#34284f",
+          "border": "#bd93f9",
+          "text": "#f8f8f2"
+        },
+        "execution": {
+          "bg": "#1d3b45",
+          "border": "#8be9fd",
+          "text": "#f8f8f2"
+        },
+        "knowledge": {
+          "bg": "#1e3d2f",
+          "border": "#50fa7b",
+          "text": "#f8f8f2"
+        },
+        "decision": {
+          "bg": "#433a1e",
+          "border": "#f1fa8c",
+          "text": "#f8f8f2"
+        },
+        "alert": {
+          "bg": "#441c28",
+          "border": "#ff5555",
+          "text": "#ff79c6"
+        },
+        "neutral": {
+          "bg": "#21222c",
+          "border": "#6272a4",
+          "text": "#f8f8f2"
+        }
+      }
+    },
+    "gruvbox_dark": {
+      "id": "gruvbox_dark",
+      "name": "Gruvbox Dark",
+      "description": "Warm retro aesthetic calibrated for continuous reading and long architecture docs",
+      "canvas_bg": "#282828",
+      "card_bg": "#1d2021",
+      "card_surface": "#3c3836",
+      "text_primary": "#ebdbb2",
+      "text_muted": "#a89984",
+      "border": "#504945",
+      "accent": "#fabd2f",
+      "roles": {
+        "governance": {
+          "bg": "#352431",
+          "border": "#d3869b",
+          "text": "#ebdbb2"
+        },
+        "execution": {
+          "bg": "#1d3230",
+          "border": "#83a598",
+          "text": "#ebdbb2"
+        },
+        "knowledge": {
+          "bg": "#2b3420",
+          "border": "#b8bb26",
+          "text": "#ebdbb2"
+        },
+        "decision": {
+          "bg": "#3e3119",
+          "border": "#fabd2f",
+          "text": "#ebdbb2"
+        },
+        "alert": {
+          "bg": "#3c1f1e",
+          "border": "#fb4934",
+          "text": "#ebdbb2"
+        },
+        "neutral": {
+          "bg": "#1d2021",
+          "border": "#665c54",
+          "text": "#a89984"
+        }
+      }
+    },
+    "solarized_dark": {
+      "id": "solarized_dark",
+      "name": "Solarized Dark",
+      "description": "Scientifically calibrated optical lab palette engineered to minimize eye strain",
+      "canvas_bg": "#002b36",
+      "card_bg": "#073642",
+      "card_surface": "#003847",
+      "text_primary": "#93a1a1",
+      "text_muted": "#657b83",
+      "border": "#586e75",
+      "accent": "#268bd2",
+      "roles": {
+        "governance": {
+          "bg": "#1c2e42",
+          "border": "#6c71c4",
+          "text": "#eee8d5"
+        },
+        "execution": {
+          "bg": "#0a3a40",
+          "border": "#2aa198",
+          "text": "#eee8d5"
+        },
+        "knowledge": {
+          "bg": "#153d2e",
+          "border": "#859900",
+          "text": "#eee8d5"
+        },
+        "decision": {
+          "bg": "#383115",
+          "border": "#b58900",
+          "text": "#eee8d5"
+        },
+        "alert": {
+          "bg": "#3a1d1d",
+          "border": "#dc322f",
+          "text": "#eee8d5"
+        },
+        "neutral": {
+          "bg": "#073642",
+          "border": "#586e75",
+          "text": "#93a1a1"
+        }
+      }
+    }
+  }
+}

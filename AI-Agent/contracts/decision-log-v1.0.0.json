@@ -1,0 +1,32 @@
+{
+    "id": "CONTRACT-B-DECISION-LOG",
+    "version": "1.0.0",
+    "source": "AI-Agent/state/decision-ledger.sqlite3 (live decisions)",
+    "fields": [
+        "id",
+        "ts",
+        "session",
+        "kind",
+        "title",
+        "body",
+        "tokens_billed",
+        "status",
+        "content_hash"
+    ],
+    "hash_algo": "sha256",
+    "hash_mode": "canonical_json_no_hash_field",
+    "changelog": [
+        {
+            "version": "1.0.0",
+            "date": "2026-10-18",
+            "description": "Derived from the live ledger schema after the first SQLite decision batch."
+        }
+    ],
+    "review_by": "2027-06-01",
+    "conformance": {
+        "test_type": "behavioral",
+        "gate": "AI-Agent/schema/contract-tests.py",
+        "ref": "CR3-W2 / N2"
+    },
+    "content_hash": "bfcd544273b3580b0e57023941a9af906ca718d23add7d739c07c07ce446fea5"
+}

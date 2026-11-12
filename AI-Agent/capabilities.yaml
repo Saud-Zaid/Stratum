@@ -1,0 +1,17 @@
+---
+status: active
+summary: "The six-capability contract — it lists capabilities only, with no single tool name (the declared separation from adapters.md). harness.py reads it and prints the operating tier: full, reduced or minimal (FX03/T-07)"
+tags:
+  - capabilities
+  - tokens
+created: 2026-10-24
+---
+
+# Capabilities contract
+
+- "C1|Partial reading of large notes"
+- "C2|Batch execution of scripts with readable output"
+- "C3|Delegating a task to a subagent"
+- "C4|A shared, importable Python library"
+- "C5|A session log written to disk"
+- "C6|Conditional writing (only if the file has not changed since it was read)"

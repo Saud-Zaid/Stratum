@@ -1,0 +1,6 @@
+---
+description: Entry point for any agent working in this vault
+alwaysApply: true
+---
+
+Read `AGENTS.md` at the repository root, then `AI-Agent/handoff.md`. All rules live there; do not add rules to this file.

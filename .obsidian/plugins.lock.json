@@ -1,0 +1,341 @@
+{
+  "lock_version": 1,
+  "note": "Plugin code is fetched at install time over HTTPS from the URLs below and verified against these SHA-256 hashes (python AI-Agent/scripts/install_plugins.py). The hashes are of the release assets as published; Obsidian later appends a nosourcemap comment (and strips an inline source map) to the installed main.js.",
+  "plugins": {
+    "obsidian-git": {
+      "version": "2.39.0",
+      "repo": "vinzent03/obsidian-git",
+      "tag": "2.39.0",
+      "minAppVersion": null,
+      "license": "MIT",
+      "files": {
+        "main.js": {
+          "url": "https://github.com/vinzent03/obsidian-git/releases/download/2.39.0/main.js",
+          "sha256": "d5a74036cf17c1a02957c1f33f59e47cf3af83525641c4374ca1fa09d95f3eb4",
+          "bytes": 727717,
+          "normalized_sha256": "faea223937d9ece5e87239ea908e62e3e9a79c632dd41864c0dff7f7cb926cc7"
+        },
+        "manifest.json": {
+          "url": "https://github.com/vinzent03/obsidian-git/releases/download/2.39.0/manifest.json",
+          "sha256": "270410edd6e64f51d974343c6e29ec8399502f6e057ae5d6264d259b104f625c",
+          "bytes": 325
+        },
+        "styles.css": {
+          "url": "https://github.com/vinzent03/obsidian-git/releases/download/2.39.0/styles.css",
+          "sha256": "f5ab93f4d5b4dd1bd1e577864c5c79087f7adfd448ac346e0489e5847ce6922d",
+          "bytes": 18303
+        }
+      }
+    },
+    "mcp-tools-istefox": {
+      "version": "3.1.1",
+      "repo": "istefox/obsidian-mcp-connector",
+      "tag": "3.1.1",
+      "minAppVersion": "1.7.2",
+      "license": "MIT",
+      "files": {
+        "main.js": {
+          "url": "https://github.com/istefox/obsidian-mcp-connector/releases/download/3.1.1/main.js",
+          "sha256": "1b28d70df0e05e84ca0fd2989c68ec41fb46683e8652ef5a051a7a635a384594",
+          "bytes": 2836314,
+          "normalized_sha256": "73eb3770e96e12ce53d8573d952403c4b42b9a734eeaaf09834fff6205f43007"
+        },
+        "manifest.json": {
+          "url": "https://github.com/istefox/obsidian-mcp-connector/releases/download/3.1.1/manifest.json",
+          "sha256": "6cd9cc0c98549709f35af43985ca45e1f65799ac1b785170d14d562347b06618",
+          "bytes": 340
+        }
+      }
+    },
+    "templater-obsidian": {
+      "version": "2.25.0",
+      "repo": "silentvoid13/Templater",
+      "tag": "2.25.0",
+      "minAppVersion": "1.13.0",
+      "license": "AGPL-3.0",
+      "files": {
+        "main.js": {
+          "url": "https://github.com/silentvoid13/Templater/releases/download/2.25.0/main.js",
+          "sha256": "6a29790e8ad3bb3de5bcc7381588f20093b2dbecc1ff27d8a5d7ed3fcebbdf4e",
+          "bytes": 453404,
+          "normalized_sha256": "d6cd3d7d3c5777530fc9cbc7bf861e3a5364eaa73c5c3d869cc82a5a2ce408ff"
+        },
+        "manifest.json": {
+          "url": "https://github.com/silentvoid13/Templater/releases/download/2.25.0/manifest.json",
+          "sha256": "75985188fac8b518eebb791370a24dae1a2476cce3912de4709778dbde0171e4",
+          "bytes": 756
+        },
+        "styles.css": {
+          "url": "https://github.com/silentvoid13/Templater/releases/download/2.25.0/styles.css",
+          "sha256": "eb94063be602679f397e3e35fcb7f6a4b027da82e17c213bb44a267c6b45d8de",
+          "bytes": 4089
+        }
+      }
+    },
+    "dataview": {
+      "version": "0.5.68",
+      "repo": "blacksmithgu/obsidian-dataview",
+      "tag": "0.5.68",
+      "minAppVersion": "0.13.11",
+      "license": "MIT",
+      "files": {
+        "main.js": {
+          "url": "https://github.com/blacksmithgu/obsidian-dataview/releases/download/0.5.68/main.js",
+          "sha256": "794e9eaede73920bb8d54b0eda4f5de2182d698cc638774500f24f14bcd4da0b",
+          "bytes": 2377639,
+          "normalized_sha256": "d6d9908721419f7f16bedcee8d8af1ee104c9c3f5d53cac1b686ee5030b94b41"
+        },
+        "manifest.json": {
+          "url": "https://github.com/blacksmithgu/obsidian-dataview/releases/download/0.5.68/manifest.json",
+          "sha256": "9235db47112da81b85591c79ecb9ae2574e5e72207056e976472f90616286185",
+          "bytes": 357
+        },
+        "styles.css": {
+          "url": "https://github.com/blacksmithgu/obsidian-dataview/releases/download/0.5.68/styles.css",
+          "sha256": "3306dd9032e00f989ba7233a37fd255bc4d3f4340cee661762e952f3f6aa1de9",
+          "bytes": 2965
+        }
+      }
+    },
+    "quickadd": {
+      "version": "2.24.2",
+      "repo": "chhoumann/quickadd",
+      "tag": "2.24.2",
+      "minAppVersion": "1.13.0",
+      "license": "MIT",
+      "files": {
+        "main.js": {
+          "url": "https://github.com/chhoumann/quickadd/releases/download/2.24.2/main.js",
+          "sha256": "9cfce437aaff293b7f72e3a5d86243e8ecc9677b4cdc89556e28b8bb8e1adf19",
+          "bytes": 1184148,
+          "normalized_sha256": "55f0be3e48966a02cbafc5ff1449a7dd754ca24893369ea80c1d24aeac5754fb"
+        },
+        "manifest.json": {
+          "url": "https://github.com/chhoumann/quickadd/releases/download/2.24.2/manifest.json",
+          "sha256": "94cc0726bba84fa05ceba5acc1372e99cd3093f21c264722fe0be47fc5df93db",
+          "bytes": 372
+        },
+        "styles.css": {
+          "url": "https://github.com/chhoumann/quickadd/releases/download/2.24.2/styles.css",
+          "sha256": "4a4e1610afae6c5d072d7b23c4cba42c8aaf0d616daa6ee78fb3ab6d7b7a33dd",
+          "bytes": 38408
+        }
+      }
+    },
+    "tag-wrangler": {
+      "version": "0.6.5",
+      "repo": "pjeby/tag-wrangler",
+      "tag": "0.6.5",
+      "minAppVersion": "1.12.7",
+      "license": "ISC",
+      "files": {
+        "main.js": {
+          "url": "https://github.com/pjeby/tag-wrangler/releases/download/0.6.5/main.js",
+          "sha256": "f390bf135135033cb2b8485438af42efb993ddd93255ac0836016e112ee9ab20",
+          "bytes": 133501,
+          "normalized_sha256": "af85f1bc8eee182f6c8f07740399feab08d9887cc4f83d5add998e16eebb9d49"
+        },
+        "manifest.json": {
+          "url": "https://github.com/pjeby/tag-wrangler/releases/download/0.6.5/manifest.json",
+          "sha256": "271a93e605b09f689fb4b05af1f73f5080e0876fc247635e4fe9e2c2d88ada96",
+          "bytes": 367
+        }
+      }
+    },
+    "colored-tags-wrangler": {
+      "version": "0.19.4",
+      "repo": "code-of-chaos/ColoredTagsWrangler.obmd",
+      "tag": "0.19.4",
+      "minAppVersion": "0.15.0",
+      "license": "GPL-3.0",
+      "files": {
+        "main.js": {
+          "url": "https://github.com/code-of-chaos/ColoredTagsWrangler.obmd/releases/download/0.19.4/main.js",
+          "sha256": "f9c6aaa2b5589d5129bb1e86ce7aaf5016636b591f99c61d4e2a8fc75cad8875",
+          "bytes": 331462,
+          "normalized_sha256": "37102ef3301b0730dc97bedc431cf533d12e320ce9d5c6f880e9c0fa3f6c26cb"
+        },
+        "manifest.json": {
+          "url": "https://github.com/code-of-chaos/ColoredTagsWrangler.obmd/releases/download/0.19.4/manifest.json",
+          "sha256": "e2edce7b4dc12694cec9fd970e19527f2a9c6b08eaee0d322883c3d9b0d92e1b",
+          "bytes": 381
+        },
+        "styles.css": {
+          "url": "https://github.com/code-of-chaos/ColoredTagsWrangler.obmd/releases/download/0.19.4/styles.css",
+          "sha256": "95f47a71a7b2b0cac59a4fcd42dbd7ffb82e7ccf263d1d52ecb4337e097c1f37",
+          "bytes": 314
+        }
+      }
+    },
+    "obsidian-linter": {
+      "version": "1.32.0",
+      "repo": "platers/obsidian-linter",
+      "tag": "1.32.0",
+      "minAppVersion": "1.12.0",
+      "license": "MIT",
+      "files": {
+        "main.js": {
+          "url": "https://github.com/platers/obsidian-linter/releases/download/1.32.0/main.js",
+          "sha256": "1b4f44bf929024cf78dd5e60a655f7cffdf7ff49f8f55695a01591f8f69e3416",
+          "bytes": 902746,
+          "normalized_sha256": "d1e8a3f818cb0eb1319e6c781473a4c58913404f9e9382ef01cac3441998cfe9"
+        },
+        "manifest.json": {
+          "url": "https://github.com/platers/obsidian-linter/releases/download/1.32.0/manifest.json",
+          "sha256": "ebe2da23394289758e13020fe2932e2f930acb20bce65f61fc233902de6ec839",
+          "bytes": 536
+        },
+        "styles.css": {
+          "url": "https://github.com/platers/obsidian-linter/releases/download/1.32.0/styles.css",
+          "sha256": "e64117e999ea0594fc9840f00a3b6f8133b5df12340cb564124b77934b424269",
+          "bytes": 4333
+        }
+      }
+    },
+    "obsidian-excalidraw-plugin": {
+      "version": "2.27.3",
+      "repo": "zsviczian/obsidian-excalidraw-plugin",
+      "tag": "2.27.3",
+      "minAppVersion": "1.8.7",
+      "license": "AGPL-3.0",
+      "files": {
+        "main.js": {
+          "url": "https://github.com/zsviczian/obsidian-excalidraw-plugin/releases/download/2.27.3/main.js",
+          "sha256": "8275e85d0f6314654a3d5ad86125d2e1b0018b4ffd60eddab2bbc8eefa0e13c1",
+          "bytes": 4884569,
+          "normalized_sha256": "88708e7f8187cbd0e28cc97b38d2ae9f1670f275460fe68c9e3bc2328e2936a1"
+        },
+        "manifest.json": {
+          "url": "https://github.com/zsviczian/obsidian-excalidraw-plugin/releases/download/2.27.3/manifest.json",
+          "sha256": "30bfc399dae79f7ca1ce050bb2a9497aada72ef576be831375571f5444f428a2",
+          "bytes": 463
+        },
+        "styles.css": {
+          "url": "https://github.com/zsviczian/obsidian-excalidraw-plugin/releases/download/2.27.3/styles.css",
+          "sha256": "4a9b329e24abdc310ccd8a0fb91c7863619ceea2a0d266981a86d6c5ebd1abea",
+          "bytes": 333231
+        }
+      }
+    },
+    "obsidian-tasks-plugin": {
+      "version": "8.4.0",
+      "repo": "obsidian-tasks-group/obsidian-tasks",
+      "tag": "8.4.0",
+      "minAppVersion": "1.8.7",
+      "license": "MIT",
+      "files": {
+        "main.js": {
+          "url": "https://github.com/obsidian-tasks-group/obsidian-tasks/releases/download/8.4.0/main.js",
+          "sha256": "c1e3333bce3fee7c1a06397ea2989cd27e1659cc30795c53ed5a60e7941e48fa",
+          "bytes": 935515,
+          "normalized_sha256": "5c52966e79888d3f8625f39bd42d0f9c75b2696fe4c198f3367f27bb31c21130"
+        },
+        "manifest.json": {
+          "url": "https://github.com/obsidian-tasks-group/obsidian-tasks/releases/download/8.4.0/manifest.json",
+          "sha256": "499cfa146ba9cbdd70ccfc9d16b6b6cbfb4243158d14335b2b336259e867c33f",
+          "bytes": 517
+        },
+        "styles.css": {
+          "url": "https://github.com/obsidian-tasks-group/obsidian-tasks/releases/download/8.4.0/styles.css",
+          "sha256": "3b2ca53d3b74162b5899b251d18b695f532546181ebaed6354befbe72c29935d",
+          "bytes": 30408
+        }
+      }
+    },
+    "omnisearch": {
+      "version": "1.31.0",
+      "repo": "scambier/obsidian-omnisearch",
+      "tag": "1.31.0",
+      "minAppVersion": "1.13.3",
+      "license": "GPL-3.0",
+      "files": {
+        "main.js": {
+          "url": "https://github.com/scambier/obsidian-omnisearch/releases/download/1.31.0/main.js",
+          "sha256": "9f2456705d0840f3cccf62a8e99a6fdaf8901939936e44d4dd27fc6b2d522f31",
+          "bytes": 718803,
+          "normalized_sha256": "63561252922dbc89d85b660f7b54e895df3a8d68b2f3fa627e3346ba65ddd4a6"
+        },
+        "manifest.json": {
+          "url": "https://github.com/scambier/obsidian-omnisearch/releases/download/1.31.0/manifest.json",
+          "sha256": "26b1ffc250b1d90605f60c132f783e3148dd399e5baf5862040671d86294bc85",
+          "bytes": 367
+        },
+        "styles.css": {
+          "url": "https://github.com/scambier/obsidian-omnisearch/releases/download/1.31.0/styles.css",
+          "sha256": "c6a56b1a18ff867f12ebbb3a139060a249704281e1b449003ff487969621a2e6",
+          "bytes": 2750
+        }
+      }
+    },
+    "consistent-attachments-and-links": {
+      "version": "4.0.0",
+      "repo": "dy-sh/obsidian-consistent-attachments-and-links",
+      "tag": "4.0.0",
+      "minAppVersion": "1.13.7",
+      "license": "MIT",
+      "files": {
+        "main.js": {
+          "url": "https://github.com/dy-sh/obsidian-consistent-attachments-and-links/releases/download/4.0.0/main.js",
+          "sha256": "15fd13291456446014b3e4f5032fe46c964e68785ceb90c2c7705333e4e20c57",
+          "bytes": 503933,
+          "normalized_sha256": "ea990947ba5825e7cfe95a73657983ccf4b5113a28ff89402d3a0e0e42fb41af"
+        },
+        "manifest.json": {
+          "url": "https://github.com/dy-sh/obsidian-consistent-attachments-and-links/releases/download/4.0.0/manifest.json",
+          "sha256": "2980226cca9bfbe259adbf1d1d78f3884fc9e8ea9c2a3d5983e0f81ea9fb4904",
+          "bytes": 382
+        },
+        "styles.css": {
+          "url": "https://github.com/dy-sh/obsidian-consistent-attachments-and-links/releases/download/4.0.0/styles.css",
+          "sha256": "341dda96f0cf5ac18b5b60a5c0da7296985e6a6efe40b006921794499a681e10",
+          "bytes": 109
+        }
+      }
+    },
+    "advanced-rename-and-delete-handler": {
+      "version": "1.3.0",
+      "repo": "mnaoumov/obsidian-advanced-rename-and-delete-handler",
+      "tag": "1.3.0",
+      "minAppVersion": "1.13.7",
+      "license": "MIT",
+      "files": {
+        "main.js": {
+          "url": "https://github.com/mnaoumov/obsidian-advanced-rename-and-delete-handler/releases/download/1.3.0/main.js",
+          "sha256": "f6d5e63064cc79cd5d47cd2315c7141d8827f001b75e92aaa87358504d288db6",
+          "bytes": 507578,
+          "normalized_sha256": "2fa0bad955293a159fb9fc796281436c2db9bd23aee263b33fe00588085f3135"
+        },
+        "manifest.json": {
+          "url": "https://github.com/mnaoumov/obsidian-advanced-rename-and-delete-handler/releases/download/1.3.0/manifest.json",
+          "sha256": "adc7d04a83688f399a0bb3244eb08e4cab6b2021fe1b18b16c4e787ff98a0060",
+          "bytes": 480
+        },
+        "styles.css": {
+          "url": "https://github.com/mnaoumov/obsidian-advanced-rename-and-delete-handler/releases/download/1.3.0/styles.css",
+          "sha256": "ed9c7980680f7d702db33f5a31bf65833f042fc0fe804eeba571f7114722ee64",
+          "bytes": 360
+        }
+      }
+    },
+    "automatic-table-of-contents": {
+      "version": "1.8.0",
+      "repo": "johansatge/obsidian-automatic-table-of-contents",
+      "tag": "1.8.0",
+      "minAppVersion": "1.5.0",
+      "license": "MIT",
+      "files": {
+        "main.js": {
+          "url": "https://github.com/johansatge/obsidian-automatic-table-of-contents/releases/download/1.8.0/main.js",
+          "sha256": "2ecda17be2026a331529cc2a2871faaa35decd2a901751506eab82dd88363563",
+          "bytes": 9289,
+          "normalized_sha256": "13384eb917bf1a07476dd87238509f2e9a5360892373eb9a26704e4953e09430"
+        },
+        "manifest.json": {
+          "url": "https://github.com/johansatge/obsidian-automatic-table-of-contents/releases/download/1.8.0/manifest.json",
+          "sha256": "de5c8ca0636da1d4c36b1c19ffc8195f7b2ba58ce322c3b4bab61a903c8286de",
+          "bytes": 335
+        }
+      }
+    }
+  }
+}

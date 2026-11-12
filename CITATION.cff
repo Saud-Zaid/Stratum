@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "Stratum"
+version: 1.0.0-beta.1
+date-released: 2026-11-12
+type: software
+repository-code: "https://github.com/Saud-Zaid/Stratum"
+url: "https://github.com/Saud-Zaid/Stratum"
+authors:
+  - family-names: "Zaid"
+    given-names: "Saud"
+license: "PolyForm-Noncommercial-1.0.0"
+keywords:
+  - obsidian
+  - second-brain
+  - ai-agents
+  - zettelkasten
+  - para

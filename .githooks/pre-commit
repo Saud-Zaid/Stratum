@@ -1,0 +1,24 @@
+#!/bin/sh
+# pre-commit gate: the audit ratchet, then the test suites of the staged files. Either failing blocks the commit.
+ROOT="$(git rev-parse --show-toplevel)" || exit 1
+cd "$ROOT" || exit 1
+VAULT="$ROOT"
+export VAULT
+TIKTOKEN_CACHE_DIR="${TIKTOKEN_CACHE_DIR:-${XDG_CACHE_HOME:-${LOCALAPPDATA:-$HOME/.cache}}/tiktoken}"
+export TIKTOKEN_CACHE_DIR
+
+if [ -x .venv/bin/python ]; then
+  PY=.venv/bin/python
+elif [ -x .venv/Scripts/python.exe ]; then
+  PY=.venv/Scripts/python.exe
+else
+  PY=AI-Agent/vault-python      # no .venv: the wrapper finds an interpreter and the pinned libraries
+fi
+if [ -d AI-Agent/scripts ] && [ "$PY" != AI-Agent/vault-python ]; then
+  PYTHONPATH="$ROOT/AI-Agent/scripts${PYTHONPATH:+:$PYTHONPATH}"
+  export PYTHONPATH
+fi
+
+"$PY" AI-Agent/scripts/audit.py --ratchet || exit 1
+"$PY" AI-Agent/scripts/consumer_suites.py --staged --run || exit 1
+exit 0

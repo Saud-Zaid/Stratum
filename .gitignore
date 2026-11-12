@@ -1,0 +1,51 @@
+# Stratum release .gitignore. Everything here is either rebuilt by a script, local to one machine, or a secret.
+
+# Python runtime: rebuilt by setup.sh / setup.ps1 / setup.cmd from uv.lock
+.venv/
+__pycache__/
+*.pyc
+
+# Obsidian plugin code is fetched by install_plugins.py and verified against .obsidian/plugins.lock.json
+.obsidian/plugins/*/main.js
+.obsidian/plugins/*/manifest.json
+.obsidian/plugins/*/styles.css
+.obsidian/plugins/*/data.json.bak
+.obsidian/plugins/obsidian-git/obsidian_askpass.sh
+
+# window layout and logs differ per machine
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+.obsidian/workspaces.json
+.obsidian/diagnostic.log
+.obsidian/plugins/*/diagnostic.log
+.obsidian/cache
+
+# the MCP connector: its settings hold tokens and its client config is written per machine by enable_mcp.py
+.obsidian/plugins/mcp-tools-istefox/data.json
+.mcp.json
+
+# local embeddings index and Obsidian's recycle bin (deleted notes are in Git history already)
+.smart-env/
+.trash/
+
+# runtime state: each of these is rebuilt, rotated or machine-local
+AI-Agent/state/vault-index.sqlite3
+AI-Agent/state/vault-index.sqlite3-*
+AI-Agent/state/*.sqlite3-wal
+AI-Agent/state/*.sqlite3-shm
+AI-Agent/state/isolation-report.json
+AI-Agent/state/telemetry-latest.json
+AI-Agent/state/throttle-state.json
+AI-Agent/state/task-key.json
+AI-Agent/state/session-memory.jsonl
+AI-Agent/state/injection-log.*.jsonl
+AI-Agent/state/tool-matrix.md
+AI-Agent/state/net-preflight.log
+AI-Agent/state/spool/
+
+# agent scratch space and the upgrade engine's working folders (installed.json and base/ ARE tracked: upgrades need them)
+AI-Agent/scratch/
+.vault-release/pending-review.json
+.vault-release/backups/
+.vault-release/staging/
+.vault-release/conflicts/

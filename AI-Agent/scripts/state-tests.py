@@ -1,0 +1,222 @@
+# SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+# SPDX-FileCopyrightText: 2026 Saud Zaid
+"""Self-tests for state (2026-10-23, AD10 C15 stage 3): validates the state.py
+helpers on controlled data -- date parsing (ISO + Arabic), latest() sorting,
+deferral line regexes, section extraction, and club selftest integration.
+Usage: state-tests"""
+
+def _U(s):
+    """ASCII-escaped test data: the shipped sources hold no Arabic literal."""
+    return s.encode("ascii").decode("unicode_escape")
+
+import sys
+import datetime
+
+import state as S
+
+R = []
+
+
+def ok(name, cond, got=""):
+    R.append((name, bool(cond), got))
+
+
+RELEASE = S.PROFILE.get("mode") == "release"   # a release has English headings and no architecture or club sections
+HAS_AR = bool(S.locale_value("NORMALIZE", {}))
+
+
+def aok(name, cond, got=""):
+    """ok(), run only where the Arabic locale tables exist."""
+    if HAS_AR:
+        ok(name, cond, got)
+    else:
+        print(f"SKIP {name}: no Arabic locale in this tree")
+
+
+# --- line_date ---
+# T1: ISO date parses
+ok("T1-iso", S.line_date("updated 2026-09-28 done") == datetime.date(2026, 9, 28), str(S.line_date("updated 2026-09-28 done")))
+
+# T2: Arabic date (day month year) parses
+aok("T2-arabic", S.line_date(_U(r"28 \u0633\u0628\u062a\u0645\u0628\u0631 2026")) == datetime.date(2026, 9, 28), str(S.line_date(_U(r"28 \u0633\u0628\u062a\u0645\u0628\u0631 2026"))))
+
+# T3: Arabic-Indic digits are translated
+aok("T3-arabic-digits", S.line_date(_U(r"\u0662\u0660\u0662\u0666-\u0660\u0669-\u0662\u0668")) == datetime.date(2026, 9, 28), str(S.line_date(_U(r"\u0662\u0660\u0662\u0666-\u0660\u0669-\u0662\u0668"))))
+
+# T4: no date -> None
+ok("T4-none", S.line_date("no date here") is None, str(S.line_date("no date here")))
+
+# T5: unknown month name -> None
+ok("T5-unknown-month", S.line_date("28 NotAMonth 2026") is None, str(S.line_date("28 NotAMonth 2026")))
+
+# --- latest ---
+# T6: newest progress lines sorted ascending by date (newest is last, n=2)
+lines = ["- 2026-09-01 first", "- 2026-10-15 newest", "- 2026-09-20 middle"]
+ok("T6-latest", S.latest(lines) == ["- 2026-09-20 middle", "- 2026-10-15 newest"], str(S.latest(lines)))
+
+# T7: n=1 returns only the newest
+ok("T7-latest-n1", S.latest(lines, n=1) == ["- 2026-10-15 newest"], str(S.latest(lines, 1)))
+
+# T8: undated lines get the date of the nearest preceding ### heading (newest is last)
+lines2 = ["### 2026-09-25 dated heading", "- undated line under it", "- 2026-10-01 explicitly dated"]
+ok("T8-heading-date", S.latest(lines2)[-1] == "- 2026-10-01 explicitly dated" and S.latest(lines2)[0] == "- undated line under it", str(S.latest(lines2)))
+
+# T9: input order does not matter (sorted internally)
+lines3 = ["- 2026-10-15 newest", "- 2026-09-01 first", "- 2026-09-20 middle"]
+ok("T9-order-independent", S.latest(lines3) == S.latest(lines), str(S.latest(lines3)))
+
+# --- deferral line regexes ---
+# T10: DEF_LINE captures the id from a deferral line
+m = S.DEF_LINE.match("- [ ] Review architecture plan [id:: D-101]")
+ok("T10-defline", m is not None and m.group(1) == "D-101", str(m.groups()) if m else "no match")
+
+# T11: DEF_LINE does not match a checked-off line
+m = S.DEF_LINE.match("- [x] Review architecture plan [id:: D-101]")
+ok("T11-defline-checked", m is None, str(m))
+
+# T12: TAG_COUNT captures tag name and threshold
+m = S.TAG_COUNT.search('[state:: "opens count >= 2"]')
+ok("T12-tagcount", m is not None and m.group(1) == "opens" and m.group(2) == "2", str(m.groups()) if m else "no match")
+
+# --- section_lines ---
+TEXT = _U(r"## \u0627\u0644\u062e\u0637\u0648\u0627\u062a \u0627\u0644\u0642\u0627\u062f\u0645\u0629\n- [ ] task A\n- [ ] task B\n\n## \u0633\u062c\u0644 \u0627\u0644\u062a\u0642\u062f\u0645\n- 2026-10-01 did X\n")
+# T13: extracts lines under a matching heading
+got = S.section_lines(TEXT, (_U(r"\u0627\u0644\u062e\u0637\u0648\u0627\u062a \u0627\u0644\u0642\u0627\u062f\u0645\u0629"),))
+ok("T13-section-lines", len(got) == 2 and all(l.strip().startswith("- [ ]") for l in got), str(got))
+
+# T14: no match -> empty
+ok("T14-no-section", S.section_lines(TEXT, ("nonexistent",)) == [], str(S.section_lines(TEXT, ("nonexistent",))))
+
+# --- club_selftest integration ---
+# T15: club_selftest runs and reports all PASS (0 failures)
+_CS = S.club_module()
+if _CS is None:
+    print("SKIP T15-club-selftest: the club section is not part of this tree")
+else:
+    result = _CS.club_selftest()
+    ok("T15-club-selftest", result == 0, f"exit={result}")
+
+
+# --- delta-only tests (AD13 M01) ---
+import time
+t0 = time.time()
+delta_out = S.delta_state()
+elapsed = time.time() - t0
+
+# T16: delta_state returns non-empty string
+ok("T16-delta-output", isinstance(delta_out, str) and len(delta_out) > 0, delta_out[:50])
+
+# T17: contains required stateless sections
+has_sections = all(k in delta_out for k in ("dirty:", "commits:", "active:", "integrity:"))
+ok("T17-delta-sections", has_sections, delta_out)
+
+# T18: integrity is masked to single line format
+integ_lines = [l for l in delta_out.splitlines() if l.startswith("integrity:")]
+ok("T18-integrity-masked", len(integ_lines) == 1 and "run archops check for details" in integ_lines[0], str(integ_lines))
+
+# T19: output size is strictly < 50 tokens (using len//4 and word count)
+tok_est = max(1, len(delta_out) // 4)
+ok("T19-token-count", tok_est < 50, f"tokens={tok_est}, chars={len(delta_out)}")
+
+# T20: --delta-only stays quick. The ceiling is generous on purpose: it guards against a scan of the whole vault (seconds), not
+# against a cold disk or a long Git history, which made a 0.15s limit fail on a fresh clone.
+ok("T20-exec-time", elapsed < 1.5, f"{elapsed:.4f}s")
+
+# T21: main(["--delta-only"]) exits cleanly with 0
+ret = S.main(["--delta-only"])
+ok("T21-main-delta", ret == 0, f"exit={ret}")
+
+# --- T-02c: upgrade alerts (read-only), profile-driven headings, check_on, hubs without arch_contract ---
+import json
+import shutil
+import tempfile
+from pathlib import Path
+
+_tmp = Path(tempfile.mkdtemp(prefix="state-t02c-"))
+try:
+    ok("T22-alerts-absent-file-is-silent", S.upgrade_alerts(_tmp) == [])
+    (_tmp / ".vault-release").mkdir()
+    _pr = _tmp / S.PENDING_REVIEW
+    _pr.write_text(json.dumps({"pending": [{"id": "conflict-skew", "severity": "high", "summary": "base moved"},
+                                           {"id": "cli-1", "summary": "flag renamed"}]}), encoding="utf-8")
+    _rows = S.upgrade_alerts(_tmp)
+    ok("T23-alerts-rows", _rows == ["HIGH\tconflict-skew\tbase moved", "WARN\tcli-1\tflag renamed"], _rows)
+    _before = _pr.read_bytes()
+    S.upgrade_alerts(_tmp)
+    ok("T24-alerts-read-only", _pr.read_bytes() == _before)
+    _pr.write_text("{not json", encoding="utf-8")
+    ok("T25-alerts-malformed-no-crash", S.upgrade_alerts(_tmp)[0].startswith("WARN\tpending-review unreadable"), S.upgrade_alerts(_tmp))
+    _pr.write_text('["a"]', encoding="utf-8")
+    ok("T26-alerts-wrong-shape-no-crash", S.upgrade_alerts(_tmp)[0].startswith("WARN\t"), S.upgrade_alerts(_tmp))
+finally:
+    shutil.rmtree(_tmp, ignore_errors=True)
+
+if RELEASE:
+    ok("T27-default-headings-unchanged", S.NEXT == ("Next Steps",) and S.LOG == ("Progress Log", "Changelog"), (S.NEXT, S.LOG))
+else:
+    ok("T27-default-headings-unchanged", S.NEXT == (_U(r"\u0627\u0644\u062e\u0637\u0648\u0627\u062a \u0627\u0644\u0642\u0627\u062f\u0645\u0629"),) and S.LOG == (_U(r"\u0633\u062c\u0644 \u0627\u0644\u062a\u0642\u062f\u0645"), _U(r"\u0633\u062c\u0644 \u0627\u0644\u062a\u063a\u064a\u064a\u0631\u0627\u062a")), (S.NEXT, S.LOG))
+ok("T28-check_on-default-true", (not S.check_on("arch") and not S.check_on("club")) if RELEASE else (S.check_on("arch") and S.check_on("club")))
+_saved = S.PROFILE
+try:
+    S.PROFILE = {**_saved, "checks": {"disabled": ["arch"]}}
+    ok("T29-check_on-disabled", not S.check_on("arch") and S.check_on("club"))
+    # hubs() with arch disabled and no system_homes must not import arch_contract
+    import sys as _s
+    _s.modules.pop("arch_contract", None)
+    S.hubs()
+    ok("T30-hubs-arch-off-no-import", "arch_contract" not in _s.modules)
+    import contextlib
+    import io
+    S.PROFILE = {**_saved, "checks": {"disabled": ["arch", "club"]}}
+    _buf = io.StringIO()
+    with contextlib.redirect_stdout(_buf):
+        S.run_default(1)
+    _o = _buf.getvalue()
+    ok("T32-run-default-skips-disabled-sections", "## architecture" not in _o and "## club" not in _o and "## active work" in _o)
+    S.PROFILE = {**_saved}
+    _buf = io.StringIO()
+    with contextlib.redirect_stdout(_buf):
+        S.run_default(1)
+    ok("T33-run-default-keeps-sections-when-enabled", RELEASE or ("## architecture" in _buf.getvalue() and "## club" in _buf.getvalue()))
+    S.PROFILE = {**_saved, "paths": {**_saved["paths"], "system_homes": ["02-Areas"]}}
+    _s.modules.pop("arch_contract", None)
+    ok("T31-hubs-profile-homes-no-import", bool(S.hubs()) and "arch_contract" not in _s.modules)
+finally:
+    S.PROFILE = _saved
+
+# T34-T38 (T-02d, U-49): .venv lock stamp
+import hashlib as _hl
+_v = Path(tempfile.mkdtemp(prefix="state-venv-"))
+try:
+    ok("T34-venv-alert-silent-without-venv", S.venv_lock_alert(_v) == [])
+    (_v / "uv.lock").write_text("lock-v1", encoding="utf-8")
+    ok("T35-venv-alert-silent-without-stamp", S.venv_lock_alert(_v) == [])
+    (_v / ".venv").mkdir()
+    (_v / S.VENV_STAMP).write_text(_hl.sha256(b"lock-v1").hexdigest() + "\n", encoding="utf-8")
+    ok("T36-venv-alert-silent-when-current", S.venv_lock_alert(_v) == [])
+    (_v / "uv.lock").write_text("lock-v2", encoding="utf-8")
+    _a = S.venv_lock_alert(_v)
+    ok("T37-venv-alert-warns-when-stale", len(_a) == 1 and _a[0].startswith("WARN\tvenv-stale"), _a)
+    (_v / S.VENV_STAMP).write_text(_hl.sha256(b"lock-v2").hexdigest(), encoding="utf-8")
+    ok("T38-venv-alert-clears-after-refresh", S.venv_lock_alert(_v) == [])
+finally:
+    shutil.rmtree(_v, ignore_errors=True)
+
+# T-05: the net-preflight line goes to $STRATUM_NET_LOG when it is set, and the default log is left alone
+import os as _os
+import tempfile as _tf
+_nl = Path(_tf.mkdtemp()) / "net.log"
+_os.environ["STRATUM_NET_LOG"] = str(_nl)
+try:
+    S._probe = lambda host, port, af: False   # no network is touched
+    S._net_preflight()
+    ok("T-05-net-log-override-is-written", _nl.is_file() and _nl.read_text(encoding="utf-8").count("\n") == 1, _nl.exists())
+finally:
+    _os.environ.pop("STRATUM_NET_LOG", None)
+
+F, P = sum(1 for _, c, _ in R if not c), sum(1 for _, c, _ in R if c)
+print(f"STATE-TESTS {P}/{len(R)}")
+for name, c, got in R:
+    if not c:
+        print(f"FAIL {name} :: {got}")
+sys.exit(1 if F else 0)

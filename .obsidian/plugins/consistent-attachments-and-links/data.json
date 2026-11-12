@@ -1,0 +1,17 @@
+{
+  "attachmentUnitFolderPaths": [],
+  "collectAttachmentUsedByMultipleNotesMode": "Skip",
+  "consistencyReportFile": "consistency-report.md",
+  "excludePaths": [],
+  "excludePathsFromAttachmentCollecting": [],
+  "includePaths": [],
+  "isAdvancedRenameAndDeleteHandlerSuggestionDeclined": false,
+  "moveAttachmentToProperFolderUsedByMultipleNotesMode": "CopyAll",
+  "proposedRenameDeleteSettings": null,
+  "shouldAddCommandsToFileMenu": true,
+  "shouldCollectAttachmentsAutomatically": false,
+  "shouldShowBackupWarning": false,
+  "treatAsAttachmentExtensions": [
+    ".excalidraw.md"
+  ]
+}
