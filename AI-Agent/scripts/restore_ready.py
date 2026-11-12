@@ -45,7 +45,7 @@ def hook_path():
         return HOOK
     r = git("rev-parse", "--git-path", "hooks/pre-commit")
     rel = r.stdout.strip() if r is not None and r.returncode == 0 else ".git/hooks/pre-commit"
-    return rel if os.path.isabs(rel) else os.path.join(VAULT, rel)
+    return os.path.normpath(rel if os.path.isabs(rel) else os.path.join(VAULT, rel))   # git prints forward slashes; Windows paths use backslashes
 
 
 def tracked_mode(path):
