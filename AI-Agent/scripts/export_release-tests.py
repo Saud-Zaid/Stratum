@@ -216,6 +216,9 @@ try:
     ok("R12-the-manifest-hashes-match-the-built-files", all(hashlib.sha256((e2e / "tree" / r).read_bytes()).hexdigest() == m["sha256"] for r, m in man["files"].items()), len(man["files"]))
     ok("R13-the-tree-is-a-git-repo-with-the-hook-wired-and-nothing-committed", subprocess.run(["git", "config", "core.hooksPath"], cwd=e2e / "tree", capture_output=True, text=True).stdout.strip() == ".githooks"
        and subprocess.run(["git", "rev-parse", "--verify", "HEAD"], cwd=e2e / "tree", capture_output=True).returncode != 0)
+    crlf = [f.relative_to(e2e / "tree").as_posix() for f in (e2e / "tree").rglob("*") if f.is_file() and ".git" not in f.relative_to(e2e / "tree").parts
+            and f.suffix.lower() in (E.TEXT_EXT | {".cmd", ".bat", ".ps1", ".toml"}) and b"\r\n" in f.read_bytes()]
+    ok("R15-the-release-is-LF-everywhere", crlf == [], crlf[:5])
     gate = subprocess.run([str(e2e / "tree/AI-Agent/vault-python"), str(e2e / "tree/AI-Agent/scripts/audit.py"), "--ratchet"], cwd=e2e / "tree", capture_output=True, text=True,
                           env={k: v for k, v in os.environ.items() if k != "VAULT"})
     ok("R14-the-built-tree-passes-its-own-commit-gate", gate.returncode == 0 and "GATE CLEAR blocking=0" in gate.stdout, "\n".join(l for l in (gate.stdout + gate.stderr).splitlines() if l.startswith(("error", "GATE")))[-400:])
