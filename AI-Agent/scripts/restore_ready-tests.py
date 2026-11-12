@@ -22,6 +22,14 @@ def skip(name, why):
     print(f"SKIP {name} {why}")
 
 
+def _rm(d):
+    """rmtree that also removes git's read-only object files (Windows refuses to delete them otherwise)."""
+    def onerror(func, path, _exc):
+        os.chmod(path, 0o700)
+        func(path)
+    shutil.rmtree(d, onerror=onerror)
+
+
 def _installed_checkout():
     """True when this checkout has the pre-commit hook installed, a remote and at least one commit: only then are the two real-checkout
     checks meaningful (the very first commit of a fresh repository runs the hook before any commit exists)."""
@@ -77,7 +85,7 @@ def t2_full_repo_passes():
            f"all_ok={all_ok} results={results}")
     finally:
         RR.VAULT, RR.HOOK = old_vault, old_hook
-        shutil.rmtree(d)
+        _rm(d)
 
 
 def t3_no_remote_fails():
@@ -91,7 +99,7 @@ def t3_no_remote_fails():
            f"results={results}")
     finally:
         RR.VAULT, RR.HOOK = old_vault, old_hook
-        shutil.rmtree(d)
+        _rm(d)
 
 
 def t4_no_hook_fails():
@@ -104,7 +112,7 @@ def t4_no_hook_fails():
         ok("t4_no_hook_fails", (not all_ok) and hook[1] is False, f"results={results}")
     finally:
         RR.VAULT, RR.HOOK = old_vault, old_hook
-        shutil.rmtree(d)
+        _rm(d)
 
 
 def t5_no_commits_fails():
@@ -117,7 +125,7 @@ def t5_no_commits_fails():
         ok("t5_no_commits_fails", (not all_ok) and commits[1] is False, f"results={results}")
     finally:
         RR.VAULT, RR.HOOK = old_vault, old_hook
-        shutil.rmtree(d)
+        _rm(d)
 
 
 def t6_real_vault_resteady():
@@ -156,7 +164,7 @@ def t8_hooks_path_resolved_through_git():
         ok("t8_hooks_path_resolved_through_git", res[0] is True and RR.hook_path() == h, res)
     finally:
         RR.VAULT, RR.HOOK = old
-        shutil.rmtree(d)
+        _rm(d)
 
 
 def t9_tracked_hook_must_be_100755():
@@ -177,7 +185,7 @@ def t9_tracked_hook_must_be_100755():
         ok("t9_tracked_hook_must_be_100755", bad[0] is False and "100644" in bad[1] and good[0] is True and "tracked 100755" in good[1], (bad, good))
     finally:
         RR.VAULT, RR.HOOK = old
-        shutil.rmtree(d)
+        _rm(d)
 
 
 def t10_local_flag_skips_only_remote():
@@ -195,7 +203,7 @@ def t10_local_flag_skips_only_remote():
         shutil.rmtree(d2)
     finally:
         RR.VAULT, RR.HOOK = old
-        shutil.rmtree(d)
+        _rm(d)
 
 
 def t11_cli_local_and_unknown_flag():
@@ -207,7 +215,7 @@ def t11_cli_local_and_unknown_flag():
         shutil.copy(os.path.join(HERE, "restore_ready.py"), os.path.join(d, "AI-Agent", "scripts", "restore_ready.py"))
         loc = subprocess.run([sys.executable, os.path.join(d, "AI-Agent", "scripts", "restore_ready.py"), "--local"], capture_output=True, text=True, timeout=60)
     finally:
-        shutil.rmtree(d)
+        _rm(d)
     ok("t11_cli_local_and_unknown_flag", r.returncode == 2 and "--bogus" in r.stderr and h.returncode == 0 and "--local" in h.stdout
        and loc.returncode == 0 and "skipped" in loc.stdout, (r.returncode, h.returncode, loc.returncode, loc.stdout[-120:]))
 

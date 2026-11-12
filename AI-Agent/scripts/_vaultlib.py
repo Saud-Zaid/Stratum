@@ -87,7 +87,7 @@ def iter_md(prefix: str = "", include_readme: bool = False) -> Iterator[Path]:
 
 
 def rel(path) -> str:
-    return str(Path(path).relative_to(VAULT))
+    return Path(path).relative_to(VAULT).as_posix()   # the vault speaks forward slashes on every platform
 
 
 def read(path) -> str:

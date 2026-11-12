@@ -4,7 +4,17 @@ A first-run walkthrough. It assumes you finished the Quickstart in [README.md](R
 
 ## 1. Open the vault
 
-Open the repository folder as a vault in Obsidian **1.13.7 or newer**, and enable community plugins when asked. Install the plugins with `python AI-Agent/scripts/install_plugins.py` (it only downloads over HTTPS from the allowed hosts and verifies every file's SHA-256 against the lock; `--check` verifies without downloading).
+The repository **is** the vault; there is nothing to import. In order:
+
+1. Clone the repository and run the setup script for your system (see the README).
+2. In Obsidian **1.13.7 or newer** choose *Open folder as vault* and select the cloned folder. Do not clone it inside another vault.
+3. When Obsidian asks, turn community plugins on.
+4. Install the plugins from a terminal in that folder: `python AI-Agent/scripts/install_plugins.py`. Plugin code is not stored in the repository: the script downloads it over HTTPS from the allowed hosts and verifies every file's SHA-256 against `.obsidian/plugins.lock.json` (`--check` verifies without downloading).
+5. Reload Obsidian (command palette, *Reload app without saving*) so the plugins load. Until step 4, the plugin list in Obsidian shows plugins that are enabled but not installed; that is expected.
+
+Your existing notes are not touched. To bring them in, copy them into `00-Inbox/` and process them from there.
+
+Windows support is experimental in this beta: the setup scripts exist, but the test suite is not yet fully green there. Linux and macOS are the supported systems for now.
 
 ## 2. Check the state
 

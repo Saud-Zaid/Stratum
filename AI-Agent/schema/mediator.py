@@ -26,7 +26,9 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
+import os
 import re
+import secrets
 import sqlite3
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -38,7 +40,32 @@ SPOOL_DIR = VAULT / "AI-Agent" / "state" / "spool"
 THROTTLE_STATE_PATH = VAULT / "AI-Agent" / "state" / "throttle-state.json"
 # C3 D2: the throttle state is external — a separate file (the kill-switch-state.json pattern); it survives
 # across processes. It used to live in the unit's memory, so every new session reset it (decorative in practice).
-KEY_PATH = Path.home() / ".config" / "goose" / "secrets" / "mediator-hmac.key"
+LEGACY_KEY_PATH = Path.home() / ".config" / "goose" / "secrets" / "mediator-hmac.key"
+
+
+def _release_mode() -> bool:
+    """True when AI-Agent/config/release_profile.yaml says `mode: release` (a missing or unreadable file = the mother vault)."""
+    try:
+        import yaml
+        cfg = yaml.safe_load((VAULT / "AI-Agent" / "config" / "release_profile.yaml").read_text(encoding="utf-8")) or {}
+        return cfg.get("mode") == "release"
+    except Exception:   # noqa: BLE001
+        return False
+
+
+def default_key_path() -> Path:
+    """The mother vault keeps its existing key; a release keeps it in the per-user state dir, outside the vault: $XDG_STATE_HOME/stratum,
+    %LOCALAPPDATA%\\stratum on Windows, ~/.local/state/stratum."""
+    if not _release_mode():
+        return LEGACY_KEY_PATH
+    if os.name == "nt" and os.environ.get("LOCALAPPDATA"):
+        base = Path(os.environ["LOCALAPPDATA"])
+    else:
+        base = Path(os.environ.get("XDG_STATE_HOME") or Path.home() / ".local" / "state")
+    return base / "stratum" / "mediator-hmac.key"
+
+
+KEY_PATH = default_key_path()
 
 SPOOL_MAX_BYTES = 1_000_000      # spool size limit (P3)
 SPOOL_TTL_HOURS = 24             # spool age limit — authorisation expiry
@@ -138,11 +165,28 @@ def _is_rate_limit_error(exc: Exception) -> bool:
     return "429" in str(exc) or "429" in type(exc).__name__
 
 
-def load_key(path: Path = KEY_PATH) -> bytes:
-    """Rejects a short key, or one leaking inside the vault — it must be outside the agent's write path."""
+def ensure_key(path: Path) -> None:
+    """A release has no key to bring from elsewhere: create one on first use, outside the vault, born 0600 and never overwritten."""
+    if path.exists() or VAULT.resolve() in path.resolve().parents:
+        return
+    path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        fd = os.open(str(path), os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    except FileExistsError:
+        return
+    with os.fdopen(fd, "wb") as fh:
+        fh.write(secrets.token_hex(32).encode("ascii"))
+
+
+def load_key(path: Path | None = None) -> bytes:
+    """Rejects a short key, or one leaking inside the vault — it must be outside the agent's write path.
+    A release creates its own key the first time it is needed; the mother vault never does (a missing key stays a hard stop)."""
+    path = path or KEY_PATH
+    if not path.exists() and path == default_key_path() and _release_mode():
+        ensure_key(path)
     if not path.exists() or path.stat().st_size < 32:
         raise KeyViolation(f"HMAC key missing or too short: {path}")
-    if VAULT in path.resolve().parents:
+    if VAULT.resolve() in path.resolve().parents:
         raise KeyViolation("key inside the agent's write path — rejected (condition 25-3)")
     return path.read_bytes().strip()
 

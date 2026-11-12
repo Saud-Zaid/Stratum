@@ -23,7 +23,7 @@ stratum-state         # the current state of the vault, derived from the files
 stratum-audit --ratchet   # the commit gate: GATE CLEAR means you may commit
 ```
 
-Open the folder as a vault in Obsidian and follow [GETTING-STARTED.md](GETTING-STARTED.md).
+**The repository is the vault.** Clone it, then in Obsidian choose *Open folder as vault* and pick the cloned `stratum` folder. Do not copy it into a vault you already use: Stratum is its own vault, with its own `.obsidian/` settings, plugins, commit gate and agent layer. To bring your existing notes in, copy them into `00-Inbox/` of the new vault. Follow [GETTING-STARTED.md](GETTING-STARTED.md).
 
 ## What is inside
 

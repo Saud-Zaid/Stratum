@@ -97,11 +97,12 @@ ok("t9_over", status == "OVER" and "ceiling=12" in line, line)
 
 # T10: real CLI — --start on the real map exits 0 and prints the line
 SCRIPT = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'session_budget.py')
-r = os.system(f"python3 '{SCRIPT}' --start medium > /dev/null")
+import subprocess
+r = subprocess.run([sys.executable, SCRIPT, "--start", "medium"], capture_output=True).returncode
 ok("t10_cli_start", r == 0)
 
 # T11: real CLI — --close over the ceiling exits non-zero (the gate fires)
-r = os.system(f"python3 '{SCRIPT}' --close small 99 > /dev/null")
+r = subprocess.run([sys.executable, SCRIPT, "--close", "small", "99"], capture_output=True).returncode
 ok("t11_cli_over", r != 0)
 
 print(f"PASSED {passed} FAILED {failed}")
