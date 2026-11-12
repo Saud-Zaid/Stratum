@@ -480,6 +480,8 @@ def write_release(root: Path, out: Path, plan: dict | None = None) -> dict:
         nonlocal written
         dest = out / rel
         dest.parent.mkdir(parents=True, exist_ok=True)
+        if Path(rel).suffix.lower() in TEXT_EXT | {".cmd", ".bat", ".ps1", ".toml"} or Path(rel).name in ("VERSION", "LICENSE", ".gitignore", ".gitattributes", "vault-python"):
+            data = data.replace(b"\r\n", b"\n")   # the release is LF everywhere: its hashes must not depend on the author's checkout
         if rel.endswith(".py"):
             data = add_spdx(data.decode("utf-8")).encode("utf-8")
         dest.write_bytes(data)

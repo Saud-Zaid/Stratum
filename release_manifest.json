@@ -419,11 +419,11 @@
     },
     "AI-Agent/scripts/export_release-tests.py": {
       "policy": "replace",
-      "sha256": "93ef1eaaf735bd5c78a98f2b45bd4524b78b802129f917dc2085081efc4f749e"
+      "sha256": "809619b2ffdbabe2647e4d2dbf71f0f3b6b2eb53d84f27333a8ae91c97b20d03"
     },
     "AI-Agent/scripts/export_release.py": {
       "policy": "replace",
-      "sha256": "bca4bddb71d24eefe8c18fce6cff7e9bf25c28233be3ce9ba1a456215564cab1"
+      "sha256": "1cf95d37bc4fdfbf37bfb40ee98424470cafa35186329635c277e0807733ded5"
     },
     "AI-Agent/scripts/fx02_session_tax-tests.py": {
       "policy": "replace",
@@ -843,7 +843,7 @@
     },
     "AI-Agent/vault-python.ps1": {
       "policy": "replace",
-      "sha256": "27bf3b4606c7137fa890b0386a8306c4f5827b6d96d462ea5a71a878e5cd99d4"
+      "sha256": "54baf0fce5369fc4d04db506d05db81a26182eddeed0eb1658c1fd1f37af5793"
     },
     "Active-Work.base": {
       "policy": "add-only",
@@ -959,11 +959,11 @@
     },
     "setup.cmd": {
       "policy": "replace",
-      "sha256": "4de1abab5c1015e2b8145fb93c529f3f0154243176632e40915c3aa605c92962"
+      "sha256": "0d5e9f834731a420c8a16057377bfce07ad5ea065b75f593c0d2dbedcb842873"
     },
     "setup.ps1": {
       "policy": "replace",
-      "sha256": "a8d195b4601016f7ac1cd4736d9f8ab5a8717ed1c7f36e8f76ed1fb02c1f95f5"
+      "sha256": "db178c44f089b28ee747da0b14767c6728aa368c1025216cd38831933043c7d9"
     },
     "setup.sh": {
       "policy": "replace",
