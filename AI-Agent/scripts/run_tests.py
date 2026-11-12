@@ -44,6 +44,13 @@ def load_plan(root: Path, which: str = "core", lane: str = "all", only: str = ""
     return plan
 
 
+def _tail(out: str) -> str:
+    """The last 15 lines, preceded by any earlier lines that name a failure (a long suite prints its FAIL line long before its summary)."""
+    lines = out.splitlines()
+    early = [ln for ln in lines[:-15] if "FAIL" in ln or "Error" in ln][:20]
+    return "\n".join(early + lines[-15:])
+
+
 def run_one(root: Path, entry: dict, timeout: float, python: str | None = None) -> dict:
     """PASS / FAIL / TIMEOUT / MISSING / SKIP for one entry. The mother-only set may be absent from a release tree."""
     path = root / entry["path"]
@@ -61,7 +68,7 @@ def run_one(root: Path, entry: dict, timeout: float, python: str | None = None) 
         status, out = ("PASS" if p.returncode == 0 else "SKIP" if p.returncode == 77 else "FAIL"), (p.stdout + p.stderr)   # 77: the test says its inputs are not here
     except subprocess.TimeoutExpired as e:
         status, out = "TIMEOUT", ((e.stdout or b"").decode("utf-8", "replace") if isinstance(e.stdout, bytes) else (e.stdout or ""))
-    res.update(status=status, seconds=round(time.perf_counter() - t0, 1), tail="\n".join(out.splitlines()[-15:]))
+    res.update(status=status, seconds=round(time.perf_counter() - t0, 1), tail=_tail(out))
     return res
 
 
