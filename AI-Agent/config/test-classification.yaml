@@ -1,0 +1,230 @@
+version: 1
+stratum_core:
+- path: AI-Agent/schema/contract-tests.py
+  runner: pytest_or_direct
+  lane: serial
+  t05_actions:
+  - u30_isolate_vault
+  - drop_vault_python_bash
+  - u40_zero_arabic_ast
+- path: AI-Agent/schema/exfil-test.py
+  runner: probe_cli
+  lane: serial
+  t05_actions:
+  - u30_add_db_spool_iso_report_flags
+  - u40_zero_arabic_ast
+  note: Interactive/CI live channel probe; in baseline, exfil-tests.py tests it in mkdtemp().
+- path: AI-Agent/schema/exfil-tests.py
+  runner: direct
+  lane: parallel
+  t05_actions:
+  - u30_hermetic_tmp
+  - u40_zero_arabic_ast
+- path: AI-Agent/schema/isolation-tests.py
+  runner: direct
+  lane: parallel
+  t05_actions:
+  - u25_xdg_secret_tmp_isolation
+  - u40_zero_arabic_ast
+- path: AI-Agent/schema/mediator-tests.py
+  runner: direct
+  lane: serial
+  t05_actions:
+  - u25_u30_hermetic_tmp
+  - drop_vault_python_bash
+  - u40_zero_arabic_ast
+- path: AI-Agent/schema/routing-tests.py
+  runner: direct
+  lane: parallel
+  t05_actions:
+  - u40_zero_arabic_ast
+- path: AI-Agent/schema/validate-tests.py
+  runner: direct
+  lane: serial
+  t05_actions:
+  - decouple_drop_norm_v1_optional
+  - u30_di_kwargs_no_repo_mutation
+  - u40_zero_arabic_ast
+- path: AI-Agent/scripts/_vaultlib-tests.py
+  runner: direct
+  lane: parallel
+  t05_actions:
+  - u32_normalize_ar_ascii
+  - decouple_mv_club_fixture
+- path: AI-Agent/scripts/apply-tests.py
+  runner: direct
+  lane: serial
+  t05_actions:
+  - u30_apply_vault_flag_tmp
+  - ntfs_skip_chmod_read_only
+- path: AI-Agent/scripts/archclaim-tests.py
+  runner: direct
+  lane: parallel
+  t05_actions:
+  - u40_zero_arabic_ast
+- path: AI-Agent/scripts/archprint-tests.py
+  runner: direct
+  lane: parallel
+  t05_actions:
+  - u40_zero_arabic_ast
+- path: AI-Agent/scripts/audit-tests.py
+  runner: direct
+  lane: serial
+  t05_actions:
+  - decouple_drop_club_rules_optional
+  - u30_hermetic_tmp
+  - u40_zero_arabic_ast
+- path: AI-Agent/scripts/audit_cas-tests.py
+  runner: direct
+  lane: serial
+  t05_actions:
+  - drop_mv_1000_threshold_or_tmp_vault
+  - drop_vault_python_bash
+- path: AI-Agent/scripts/consumer_suites-tests.py
+  runner: direct
+  lane: parallel
+  t05_actions:
+  - u40_zero_arabic_ast
+  - staged_run_coverage
+- path: AI-Agent/scripts/derive_live_arch-tests.py
+  runner: direct
+  lane: parallel
+  t05_actions:
+  - u37_ast_live_fallback_coverage
+  - u40_zero_arabic_ast
+- path: AI-Agent/scripts/fx02_session_tax-tests.py
+  runner: direct
+  lane: parallel
+  t05_actions:
+  - u39_stratum_session_db_env
+- path: AI-Agent/scripts/fx05_task_key-tests.py
+  runner: direct
+  lane: parallel
+  t05_actions:
+  - u39_stratum_session_db_env
+- path: AI-Agent/scripts/g02_routing-tests.py
+  runner: direct
+  lane: parallel
+  t05_actions:
+  - decouple_mv_paths
+- path: AI-Agent/scripts/g03_session-tests.py
+  runner: direct
+  lane: parallel
+  t05_actions:
+  - u39_mem_subcommand_coverage
+- path: AI-Agent/scripts/g04_search-tests.py
+  runner: direct
+  lane: parallel
+  t05_actions:
+  - u40_zero_arabic_ast
+  - u44_posix_stratum_scope
+- path: AI-Agent/scripts/g06-tests.py
+  runner: direct
+  lane: serial
+  t05_actions:
+  - drop_vault_python_bash
+  - u33_u45_coverage
+- path: AI-Agent/scripts/g07_tokens-tests.py
+  runner: direct
+  lane: parallel
+  t05_actions:
+  - decouple_mv_paths
+  - u40_zero_arabic_ast
+- path: AI-Agent/scripts/g10_operations-tests.py
+  runner: direct
+  lane: parallel
+  t05_actions:
+  - u50_schema_version_guard_coverage
+- path: AI-Agent/scripts/harness-tests.py
+  runner: direct
+  lane: parallel
+  t05_actions:
+  - u40_zero_arabic_ast
+  - sync_capabilities_english
+- path: AI-Agent/scripts/outline-tests.py
+  runner: direct
+  lane: parallel
+  t05_actions:
+  - u30_hermetic_tmp
+  - u40_zero_arabic_ast
+- path: AI-Agent/scripts/restore_ready-tests.py
+  runner: direct
+  lane: serial
+  t05_actions:
+  - u43_local_flag_offline_no_remote
+  - ntfs_skip_chmod_read_only
+- path: AI-Agent/scripts/section-tests.py
+  runner: direct
+  lane: parallel
+  t05_actions:
+  - decouple_mv_paths
+  - u40_zero_arabic_ast
+- path: AI-Agent/scripts/session_analyzer-tests.py
+  runner: direct
+  lane: parallel
+  t05_actions:
+  - drop_vault_python_bash
+- path: AI-Agent/scripts/session_budget-tests.py
+  runner: direct
+  lane: parallel
+  t05_actions:
+  - u40_zero_arabic_ast
+  - sync_english_budget_heading
+- path: AI-Agent/scripts/skill_args-tests.py
+  runner: direct
+  lane: parallel
+  t05_actions:
+  - u23_agentskills_io_coverage
+- path: AI-Agent/scripts/state-tests.py
+  runner: direct
+  lane: parallel
+  t05_actions:
+  - u46_upgrade_alerts_readonly
+  - u40_zero_arabic_ast
+- path: AI-Agent/scripts/tool_gate-tests.py
+  runner: direct
+  lane: serial
+  t05_actions:
+  - u29_dual_cap_and_json_yaml
+  - drop_vault_python_bash
+- path: AI-Agent/scripts/vault_diagram-tests.py
+  runner: direct
+  lane: parallel
+  t05_actions: []
+- path: AI-Agent/scripts/vaultlib-tests.py
+  runner: direct
+  lane: parallel
+  t05_actions:
+  - u30_hermetic_tmp
+  - u40_zero_arabic_ast
+- path: AI-Agent/scripts/run_tests-tests.py
+  runner: direct
+  lane: parallel
+  t05_actions: []
+  note: T-05b - the test runner itself; every case runs in a temporary vault.
+- path: AI-Agent/scripts/install_plugins-tests.py
+  runner: direct
+  lane: parallel
+  t05_actions: []
+  note: T-05b - plugin installer; the downloader is injected, so no test touches the network.
+- path: AI-Agent/scripts/upgrade_core-tests.py
+  runner: direct
+  lane: parallel
+  t05_actions: []
+  note: T-05b - upgrade engine and restore; releases are built in memory, every case runs in a temporary vault, no network.
+- path: AI-Agent/scripts/enable_mcp-tests.py
+  runner: direct
+  lane: parallel
+  t05_actions: []
+  note: T-06c - the MCP connector switch against a throwaway vault.
+- path: AI-Agent/scripts/export_release-tests.py
+  runner: direct
+  lane: parallel
+  t05_actions: []
+  note: T-06a - the exporter's plan/check against fixtures; the real-vault cases (R-series) are skipped by exiting 77 where the mother vault is absent.
+- path: AI-Agent/scripts/cli_contract-tests.py
+  runner: direct
+  lane: serial
+  t05_actions:
+  - extend_to_docs_skills_manifest
+  note: T-02e slice - the shared CLI contract (--help rc 0, unknown flag rc 2) and the stratum-* console scripts.

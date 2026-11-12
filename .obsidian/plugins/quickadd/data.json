@@ -1,0 +1,355 @@
+{
+  "choices": [
+    {
+      "id": "3618ecb9-5c00-479b-abd8-169803237668",
+      "name": "New Fleeting",
+      "type": "Template",
+      "command": true,
+      "templatePath": "Templates/Fleeting.md",
+      "fileNameFormat": {
+        "enabled": false,
+        "format": ""
+      },
+      "discoverExistingNotesBeforeCreate": false,
+      "folder": {
+        "enabled": true,
+        "folders": [
+          "00-Inbox"
+        ],
+        "chooseWhenCreatingNote": false,
+        "createInSameFolderAsActiveFile": false,
+        "chooseFromSubfolders": false
+      },
+      "appendLink": false,
+      "copyLinkToClipboard": false,
+      "openFile": true,
+      "fileOpening": {
+        "location": "tab",
+        "direction": "vertical",
+        "mode": "default",
+        "focus": true
+      },
+      "fileExistsBehavior": {
+        "kind": "prompt"
+      }
+    },
+    {
+      "id": "433edbfc-0b13-4e6a-84b6-eda840edb4fb",
+      "name": "New Literature",
+      "type": "Template",
+      "command": true,
+      "templatePath": "Templates/Literature.md",
+      "fileNameFormat": {
+        "enabled": false,
+        "format": ""
+      },
+      "discoverExistingNotesBeforeCreate": false,
+      "folder": {
+        "enabled": true,
+        "folders": [
+          "00-Inbox"
+        ],
+        "chooseWhenCreatingNote": false,
+        "createInSameFolderAsActiveFile": false,
+        "chooseFromSubfolders": false
+      },
+      "appendLink": false,
+      "copyLinkToClipboard": false,
+      "openFile": true,
+      "fileOpening": {
+        "location": "tab",
+        "direction": "vertical",
+        "mode": "default",
+        "focus": true
+      },
+      "fileExistsBehavior": {
+        "kind": "prompt"
+      }
+    },
+    {
+      "id": "c370e3e2-a2b9-47b4-b5f7-7d9fe9d627a6",
+      "name": "New Permanent",
+      "type": "Template",
+      "command": true,
+      "templatePath": "Templates/Permanent.md",
+      "fileNameFormat": {
+        "enabled": false,
+        "format": ""
+      },
+      "discoverExistingNotesBeforeCreate": false,
+      "folder": {
+        "enabled": true,
+        "folders": [
+          "00-Inbox"
+        ],
+        "chooseWhenCreatingNote": false,
+        "createInSameFolderAsActiveFile": false,
+        "chooseFromSubfolders": false
+      },
+      "appendLink": false,
+      "copyLinkToClipboard": false,
+      "openFile": true,
+      "fileOpening": {
+        "location": "tab",
+        "direction": "vertical",
+        "mode": "default",
+        "focus": true
+      },
+      "fileExistsBehavior": {
+        "kind": "prompt"
+      }
+    },
+    {
+      "id": "bc458d31-6ca3-464e-bd9b-e0bb22d49597",
+      "name": "New Project",
+      "type": "Template",
+      "command": true,
+      "templatePath": "Templates/Project.md",
+      "fileNameFormat": {
+        "enabled": false,
+        "format": ""
+      },
+      "discoverExistingNotesBeforeCreate": false,
+      "folder": {
+        "enabled": true,
+        "folders": [
+          "00-Inbox"
+        ],
+        "chooseWhenCreatingNote": false,
+        "createInSameFolderAsActiveFile": false,
+        "chooseFromSubfolders": false
+      },
+      "appendLink": false,
+      "copyLinkToClipboard": false,
+      "openFile": true,
+      "fileOpening": {
+        "location": "tab",
+        "direction": "vertical",
+        "mode": "default",
+        "focus": true
+      },
+      "fileExistsBehavior": {
+        "kind": "prompt"
+      }
+    },
+    {
+      "id": "59c3ea55-62a4-41e4-8e57-912e9b7fee12",
+      "name": "New MOC",
+      "type": "Template",
+      "command": true,
+      "templatePath": "Templates/MOC.md",
+      "fileNameFormat": {
+        "enabled": false,
+        "format": ""
+      },
+      "discoverExistingNotesBeforeCreate": false,
+      "folder": {
+        "enabled": true,
+        "folders": [
+          "00-Inbox"
+        ],
+        "chooseWhenCreatingNote": false,
+        "createInSameFolderAsActiveFile": false,
+        "chooseFromSubfolders": false
+      },
+      "appendLink": false,
+      "copyLinkToClipboard": false,
+      "openFile": true,
+      "fileOpening": {
+        "location": "tab",
+        "direction": "vertical",
+        "mode": "default",
+        "focus": true
+      },
+      "fileExistsBehavior": {
+        "kind": "prompt"
+      }
+    }
+  ],
+  "inputPrompt": "single-line",
+  "persistInputPromptDrafts": true,
+  "useSelectionAsCaptureValue": true,
+  "namePastedImagesAfterNoteTitle": false,
+  "searchNestedChoices": true,
+  "templateFolderLauncherRow": "bottom",
+  "devMode": false,
+  "templateFolderPaths": [],
+  "announceUpdates": "major",
+  "version": "2.24.2",
+  "globalVariables": {},
+  "onePageInputEnabled": false,
+  "disableOnlineFeatures": true,
+  "enableUriCallbacks": false,
+  "enableRibbonIcon": false,
+  "showCaptureNotification": true,
+  "showInputCancellationNotification": false,
+  "enableTemplatePropertyTypes": false,
+  "dateAliases": {
+    "t": "today",
+    "tm": "tomorrow",
+    "yd": "yesterday",
+    "nw": "next week",
+    "nm": "next month",
+    "ny": "next year",
+    "lw": "last week",
+    "lm": "last month",
+    "ly": "last year"
+  },
+  "ai": {
+    "defaultModel": "Ask me",
+    "defaultSystemPrompt": "As an AI assistant within Obsidian, your primary goal is to help users manage their ideas and knowledge more effectively. Format your responses using Markdown syntax. Please use the [[Obsidian]] link format. You can write aliases for the links by writing [[Obsidian|the alias after the pipe symbol]].",
+    "promptTemplatesFolderPath": "",
+    "showAssistant": true,
+    "providers": [
+      {
+        "id": "openai",
+        "name": "OpenAI",
+        "endpoint": "https://api.openai.com/v1",
+        "kind": "openai",
+        "apiKey": "",
+        "models": [
+          {
+            "name": "gpt-5.5",
+            "maxTokens": 1050000,
+            "maxOutputTokens": 128000,
+            "supportsTemperature": false
+          },
+          {
+            "name": "gpt-5.4",
+            "maxTokens": 1050000,
+            "maxOutputTokens": 128000,
+            "supportsTemperature": false
+          },
+          {
+            "name": "gpt-5.4-mini",
+            "maxTokens": 400000,
+            "maxOutputTokens": 128000,
+            "supportsTemperature": false
+          },
+          {
+            "name": "gpt-5.4-nano",
+            "maxTokens": 400000,
+            "maxOutputTokens": 128000,
+            "supportsTemperature": false
+          },
+          {
+            "name": "gpt-4.1",
+            "maxTokens": 1047576,
+            "maxOutputTokens": 32768,
+            "supportsTemperature": true
+          },
+          {
+            "name": "gpt-4.1-mini",
+            "maxTokens": 1047576,
+            "maxOutputTokens": 32768,
+            "supportsTemperature": true
+          },
+          {
+            "name": "gpt-4o",
+            "maxTokens": 128000,
+            "maxOutputTokens": 16384,
+            "supportsTemperature": true
+          },
+          {
+            "name": "gpt-4o-mini",
+            "maxTokens": 128000,
+            "maxOutputTokens": 16384,
+            "supportsTemperature": true
+          },
+          {
+            "name": "o3",
+            "maxTokens": 200000,
+            "maxOutputTokens": 100000,
+            "supportsTemperature": false
+          },
+          {
+            "name": "o4-mini",
+            "maxTokens": 200000,
+            "maxOutputTokens": 100000,
+            "supportsTemperature": false
+          }
+        ],
+        "autoSyncModels": true,
+        "modelSource": "modelsDev"
+      },
+      {
+        "id": "gemini",
+        "name": "Gemini",
+        "endpoint": "https://generativelanguage.googleapis.com",
+        "kind": "gemini",
+        "apiKey": "",
+        "models": [
+          {
+            "name": "gemini-3.5-flash",
+            "maxTokens": 1048576,
+            "maxOutputTokens": 65536,
+            "supportsTemperature": true
+          },
+          {
+            "name": "gemini-3.1-pro-preview",
+            "maxTokens": 1048576,
+            "maxOutputTokens": 65536,
+            "supportsTemperature": true
+          },
+          {
+            "name": "gemini-3.1-flash-lite",
+            "maxTokens": 1048576,
+            "maxOutputTokens": 65536,
+            "supportsTemperature": true
+          },
+          {
+            "name": "gemini-3-pro-preview",
+            "maxTokens": 1048576,
+            "maxOutputTokens": 65536,
+            "supportsTemperature": true
+          },
+          {
+            "name": "gemini-3-flash-preview",
+            "maxTokens": 1048576,
+            "maxOutputTokens": 65536,
+            "supportsTemperature": true
+          },
+          {
+            "name": "gemini-2.5-pro",
+            "maxTokens": 1048576,
+            "maxOutputTokens": 65536,
+            "supportsTemperature": true
+          },
+          {
+            "name": "gemini-2.5-flash",
+            "maxTokens": 1048576,
+            "maxOutputTokens": 65536,
+            "supportsTemperature": true
+          },
+          {
+            "name": "gemini-2.5-flash-lite",
+            "maxTokens": 1048576,
+            "maxOutputTokens": 65536,
+            "supportsTemperature": true
+          }
+        ],
+        "autoSyncModels": true,
+        "modelSource": "modelsDev"
+      }
+    ],
+    "confirmToolCalls": "destructive"
+  },
+  "migrations": {
+    "migrateToMacroIDFromEmbeddedMacro": true,
+    "useQuickAddTemplateFolder": true,
+    "incrementFileNameSettingMoveToDefaultBehavior": true,
+    "consolidateFileExistsBehavior": true,
+    "repairTemplateFileExistsBehavior": true,
+    "mutualExclusionInsertAfterAndWriteToBottomOfFile": true,
+    "setVersionAfterUpdateModalRelease": true,
+    "addDefaultAIProviders": true,
+    "removeMacroIndirection": true,
+    "migrateFileOpeningSettings": true,
+    "backfillFileOpeningDefaults": true,
+    "setProviderModelDiscoveryMode": true,
+    "migrateProviderApiKeysToSecretStorage": true,
+    "migrateToMultipleTemplateFolders": true,
+    "refreshStaleDefaultModelSeeds": true,
+    "pinAiModelRefs": true
+  }
+}

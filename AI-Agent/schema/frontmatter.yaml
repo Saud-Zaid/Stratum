@@ -1,0 +1,535 @@
+version: 2
+strict: true
+enforcement: enforce
+keys:
+  area:
+    type: wikilink
+    consumer:
+    - dataview
+  status:
+    type: enum
+    consumer:
+    - dataview
+    - audit
+  created:
+    type: date
+    consumer:
+    - dataview
+  tags:
+    type: list
+    consumer:
+    - dataview
+  type:
+    type: enum
+    consumer:
+    - retrieval
+    - bases
+    - audit
+  id:
+    type: string
+    consumer:
+    - audit
+  title:
+    type: string
+    consumer:
+    - retrieval
+  summary:
+    type: string
+    consumer:
+    - retrieval
+    max_chars: 200
+  source:
+    type: string
+    consumer:
+    - retrieval
+  tool:
+    type: string
+    consumer:
+    - retrieval
+  topic:
+    type: string
+    consumer:
+    - retrieval
+  content_candidate:
+    type: bool
+    consumer:
+    - retrieval
+  deprecated:
+    type: bool
+    consumer:
+    - retrieval
+  rule:
+    type: string
+    consumer:
+    - audit
+    - retrieval
+  tools:
+    type: list
+    consumer:
+    - audit
+    - retrieval
+  superseded_by:
+    type: string
+    consumer:
+    - audit
+  last_reviewed:
+    type: date
+    consumer:
+    - audit
+  review_findings:
+    type: string
+    consumer:
+    - retrieval
+  audit_waive:
+    type: map
+    consumer:
+    - audit
+  aliases:
+    type: list
+    consumer:
+    - retrieval
+  since:
+    type: date
+    consumer:
+    - audit
+    - retrieval
+  related:
+    type: list
+    consumer:
+    - retrieval
+  updated_by:
+    type: string
+    consumer:
+    - retrieval
+  name:
+    type: string
+    consumer:
+    - retrieval
+  description:
+    type: string
+    consumer:
+    - retrieval
+  args:
+    type: map
+    consumer:
+    - retrieval
+    - audit
+  wave:
+    type: string
+    consumer:
+    - audit
+    - retrieval
+  researcher:
+    type: string
+    consumer:
+    - audit
+    - retrieval
+  subagent:
+    type: string
+    consumer:
+    - audit
+    - retrieval
+  skills:
+    type: list
+    consumer:
+    - retrieval
+  availability:
+    type: string
+    consumer:
+    - retrieval
+  rating:
+    type: string
+    consumer:
+    - retrieval
+  contact_preference:
+    type: string
+    consumer:
+    - retrieval
+  role:
+    type: list
+    consumer:
+    - dataview
+  contexts:
+    type: list
+    consumer:
+    - dataview
+  circle:
+    type: enum
+    consumer:
+    - dataview
+    values:
+    - close
+    - active
+    - acquaintance
+  consent_on:
+    type: date
+    consumer:
+    - dataview
+  tool_type:
+    type: string
+    consumer:
+    - retrieval
+  review_tier:
+    type: string
+    consumer:
+    - retrieval
+  date:
+    type: date
+    consumer:
+    - dataview
+  promoted_from_weekly:
+    type: bool
+    consumer:
+    - retrieval
+  team:
+    type: list
+    consumer:
+    - audit
+    - retrieval
+  project:
+    type: wikilink
+    consumer:
+    - dataview
+  last_updated:
+    type: date
+    consumer:
+    - retrieval
+  due:
+    type: date
+    consumer:
+    - audit
+  competition_url:
+    type: string
+    consumer:
+    - retrieval
+  registration_deadline:
+    type: date
+    consumer:
+    - retrieval
+  qualifiers_announced:
+    type: date
+    consumer:
+    - retrieval
+  event_dates:
+    type: string
+    consumer:
+    - retrieval
+  official_category:
+    type: string
+    consumer:
+    - retrieval
+  scope:
+    type: string
+    consumer:
+    - retrieval
+  archived_range:
+    type: string
+    consumer:
+    - retrieval
+  archived_on:
+    type: date
+    consumer:
+    - retrieval
+  supersedes:
+    type: string
+    consumer:
+    - retrieval
+  kind:
+    type: enum
+    consumer:
+    - audit
+    values:
+    - tool
+    - design
+    - process
+    - build
+  regression_check:
+    type: string
+    consumer:
+    - retrieval
+  systems:
+    type: list
+    consumer:
+    - retrieval
+  steps:
+    type: list
+    consumer:
+    - retrieval
+  symptoms:
+    type: string
+    consumer:
+    - retrieval
+  cause:
+    type: string
+    consumer:
+    - retrieval
+  workaround:
+    type: string
+    consumer:
+    - retrieval
+  fix_status:
+    type: enum
+    consumer:
+    - retrieval
+    values:
+    - open
+    - workaround
+    - fixed
+  license:
+    type: string
+    consumer:
+    - audit
+  excalidraw-plugin:
+    type: string
+    consumer:
+    - retrieval
+classes:
+  para:
+    when:
+      path_prefix:
+      - 01-Projects/
+      - 02-Areas/
+      - 03-Resources/
+    required:
+    - area
+    - tags
+    - created
+    optional:
+    - status
+    - summary
+    - last_reviewed
+    - review_findings
+    - deprecated
+    - audit_waive
+    - review_tier
+    - aliases
+    - promoted_from_weekly
+    - team
+    - project
+    - last_updated
+    - due
+    - competition_url
+    - registration_deadline
+    - qualifiers_announced
+    - event_dates
+    - official_category
+    - date
+    - scope
+    - source
+    - type
+    - contexts
+    - kind
+    status_enum:
+    - active
+    - someday
+    - done
+    - on-hold
+    - planned
+    - locked
+    notes: 'status is used in Projects and Areas, not in Resources. `type` is a label only: do not put a class-selecting value (moc, area, literature, experiment, permanent) on a para note by hand, it silently reclassifies it.'
+  zettelkasten:
+    when:
+      fm_in:
+        type:
+        - literature
+        - experiment
+        - permanent
+    required:
+    - type
+    - tags
+    - created
+    optional:
+    - id
+    - source
+    - tool
+    - content_candidate
+    - summary
+    - audit_waive
+    notes: id is auto and Permanent-only; source is Literature/Experiment only; tool is Experiment only.
+  moc:
+    when:
+      fm_eq:
+        type: moc
+    required:
+    - type
+    - topic
+    - tags
+    optional:
+    - created
+    - audit_waive
+    - area
+    - status
+    - kind
+  area_note:
+    when:
+      fm_eq:
+        type: area
+    required:
+    - type
+    - tags
+    - created
+    optional:
+    - status
+    - summary
+    - last_reviewed
+    - review_findings
+    - audit_waive
+    - aliases
+    status_enum:
+    - active
+    - someday
+    - done
+    - on-hold
+    notes: 'An Area note IS the area; it carries no `area` key pointing at itself. Every area query is `FROM "01-Projects"|"03-Resources" WHERE area = link(this.file.link)` and none reads FROM "02-Areas", so a self-link would have no consumer. Selected by `type: area`, not by path, because the root of 02-Areas/ also holds non-Area notes (area guides, changelogs, Current-Week, dashboards) that do need `area`. Templates/Area.md carries `type: area` so new Areas are born correct. (2026-09-27)'
+  trap:
+    when:
+      path_prefix:
+      - AI-Agent/traps/
+    required:
+    - id
+    - rule
+    - status
+    optional:
+    - superseded_by
+    - audit_waive
+    - since
+    - related
+    - title
+    - created
+    - tools
+    - kind
+    - regression_check
+    - systems
+    - steps
+    - symptoms
+    - cause
+    - workaround
+    - fix_status
+    status_enum:
+    - active
+    - superseded
+    notes: enforced by the existing RG-* rules; listed here so the schema is complete, not to duplicate them. tools required for kind tool, enforced by audit RG-tools.
+  person:
+    when:
+      path_prefix:
+      - 02-Areas/People/
+    required:
+    - tags
+    - created
+    optional:
+    - area
+    - skills
+    - availability
+    - rating
+    - contact_preference
+    - audit_waive
+    - type
+    - role
+    - contexts
+    - circle
+    - consent_on
+    notes: '`type` is a stable constant kept out of `required`. `role`, `contexts`, `circle` and `consent_on` feed the people views.'
+  archive:
+    when:
+      path_prefix:
+      - 04-Archive/
+    required:
+    - tags
+    - created
+    optional:
+    - archived_range
+    - archived_on
+    - supersedes
+    - superseded_by
+    extends: para
+  skill:
+    when:
+      path_prefix:
+      - AI-Agent/skills/
+    required:
+    - name
+    - description
+    optional:
+    - tags
+    - created
+    - audit_waive
+    - args
+    - license
+  operational:
+    when:
+      path_prefix:
+      - AI-Agent/
+    required:
+    - tags
+    - created
+    optional:
+    - type
+    - status
+    - updated_by
+    - audit_waive
+    - area
+    - kind
+    - title
+    - project
+    - wave
+    - researcher
+    - subagent
+    notes: '`area`, `title`, `project`, `wave`, `researcher` and `subagent` are admitted for AI-Agent/ paths; the keys themselves are registered in the top-level keys block.'
+  excalidraw:
+    when:
+      path_suffix:
+      - .excalidraw.md
+    required:
+    - excalidraw-plugin
+    optional:
+    - tags
+    - created
+    - area
+    - status
+    - summary
+    - aliases
+unclassed_ok:
+- Templates/
+- 00-Inbox/
+- Dashboard.md
+- AGENTS.md
+- README.md
+- GETTING-STARTED.md
+- CHANGELOG.md
+- LICENSES/
+- THIRD-PARTY-NOTICES.md
+- CLAUDE.md
+checks:
+  FM-required:
+    severity: error
+    desc: required key missing for the file's class
+  FM-unknown:
+    severity: warn
+    desc: key not registered; error once strict is true
+  FM-created-type:
+    severity: error
+    desc: created is str, not date (ADR-010)
+  FM-area-target:
+    severity: error
+    desc: area wikilink resolves to no note
+  FM-status-enum:
+    severity: warn
+    desc: status outside the class enum
+  FM-orphan-key:
+    severity: info
+    desc: registered key whose consumer list is empty
+  FM-unclassed:
+    severity: warn
+    desc: note matches no class and is not listed in unclassed_ok (it escapes every FM-* check)
+  FM-tag-variant:
+    severity: warn
+    desc: 'one tag spelled two ways (case, _ vs -, trailing s): splits searches and contains-filters'
+  FM-team-link:
+    severity: error
+    desc: external teammate is not a wikilink [[...]] to 02-Areas/People/ (vault owner exempted)
+  FM-team-missing:
+    severity: error
+    desc: teammate note does not exist in 02-Areas/People/
+  FM-team-location:
+    severity: error
+    desc: teammate note is not in 02-Areas/People/

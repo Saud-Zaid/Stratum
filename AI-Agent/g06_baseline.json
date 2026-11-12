@@ -1,0 +1,29 @@
+{
+  "created": "2026-11-12",
+  "project": "Stratum",
+  "method": "tiktoken o200k_base first-party measurement",
+  "metrics": {
+    "operations_md_tokens": 97,
+    "rules_md_tokens": 1553,
+    "handoff_md_tokens": 1720,
+    "hit_rate_pct": 100,
+    "usage_rate_pct": null,
+    "token_ratio_out_in": null,
+    "permanent_layer": {
+      "file": "AI-Agent/permanent-layer.md",
+      "cap_tokens": 1300,
+      "measured_tokens": 416
+    },
+    "static_childhood_tokens": 416,
+    "session_ceiling_tokens": 1300,
+    "session_ceiling_scope": "live payload of a standard session: dynamic injection plus session context",
+    "s13_max_seconds": 5,
+    "hit_rate_cadence_days": 14,
+    "schedule_established": "2026-11-12",
+    "s16_max_log_lines": 200
+  },
+  "notes": "Release baseline: measured on the shipped files. The detached signature of a vault owner is not part of a release.",
+  "version": "1.0.0",
+  "last_measured": "2026-11-12",
+  "content_hash": "b2772837eb288617104c8e4c2ec9aff4e364b70a3342ffdc219fb68482eef074"
+}

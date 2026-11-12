@@ -1,0 +1,23 @@
+filters:
+  and:
+    - file.inFolder("01-Projects")
+    - status == "active"
+views:
+  - type: table
+    name: Active projects
+    order:
+      - file.name
+      - area
+      - status
+      - file.mtime
+    sort:
+      - property: file.mtime
+        direction: DESC
+  - type: table
+    name: By area
+    groupBy:
+      property: area
+      direction: ASC
+    order:
+      - file.name
+      - file.mtime

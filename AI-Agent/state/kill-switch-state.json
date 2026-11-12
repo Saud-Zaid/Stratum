@@ -1,0 +1,7 @@
+{
+    "status": "RUN",
+    "updated_at": "2026-11-12T00:00:00+00:00",
+    "updated_by": "release",
+    "halt_owner": "the vault owner only",
+    "note": "HALT blocks every build; RUN is the default operational state."
+}

@@ -1,0 +1,37 @@
+{
+    "id": "CONTRACT-D-SKILL-RECORD",
+    "version": "1.0.0",
+    "source": "AI-Agent/skills/ live inventory (the consumer arrives with the mediator - declared residual W3)",
+    "fields": [
+        "id",
+        "name",
+        "path",
+        "sha256",
+        "status",
+        "created",
+        "review_by"
+    ],
+    "hash_algo": "sha256",
+    "hash_mode": "canonical_json_no_hash_field",
+    "changelog": [
+        {
+            "version": "1.0.0",
+            "date": "2026-10-18",
+            "description": "Contract D registered; derived from live skills inventory, not invented."
+        }
+    ],
+    "review_by": "2027-06-01",
+    "conformance": {
+        "test_type": "behavioral",
+        "gate": "AI-Agent/schema/contract-tests.py",
+        "ref": "CR3-W2 / N2"
+    },
+    "content_hash": "2a96f06ff06afaa3802b73b17e59688318e25fa7b0386f8968479c507892d782",
+    "skills_cap": {
+        "active": [
+            1,
+            3
+        ],
+        "source": "plan: a cap of 1-3 active skills for runner D"
+    }
+}

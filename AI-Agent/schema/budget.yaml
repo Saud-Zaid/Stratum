@@ -1,0 +1,17 @@
+---
+status: active
+area: "[[Second-Brain-Operations]]"
+summary: "Task-call budget ceilings by task type — the single source, read by session_budget.py; no hardcoded values in code (FX02/FX12)"
+tags:
+  - tokens
+  - budget
+  - FX02
+created: 2026-10-24
+---
+
+# Task budget ceilings (FX02/FX12)
+
+- "call_cost_note|Every call costs the full context; the number of calls, not their size, is the lever (FX02)"
+- "small|12"
+- "medium|25"
+- "delegation|30"

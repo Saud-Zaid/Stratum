@@ -1,0 +1,34 @@
+[project]
+name = "stratum"
+version = "1.0.0b1"
+description = "Stratum: a vault runtime for AI agents working over Obsidian notes"
+requires-python = ">=3.11,<3.14"
+dependencies = [
+    "markdown-it-py==4.2.0",
+    "mdit-py-plugins==0.6.1",
+    "mdurl==0.1.2",
+    "PyYAML==6.0.3",
+    "tiktoken==0.14.0",
+]
+
+[project.optional-dependencies]
+jev = ["mcp<2"]           # optional decision client; never installed by default
+
+[dependency-groups]
+dev = ["pip-audit"]       # PEP 735: `uv sync --group dev`
+
+[project.scripts]
+stratum-state = "stratum_cli.main:state"
+stratum-audit = "stratum_cli.main:audit"
+stratum-section = "stratum_cli.main:section"
+stratum-outline = "stratum_cli.main:outline"
+stratum-tool-gate = "stratum_cli.main:tool_gate"
+stratum-restore-ready = "stratum_cli.main:restore_ready"
+stratum-entry-map = "stratum_cli.main:entry_map"
+
+[build-system]
+requires = ["uv_build>=0.12,<0.13"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "stratum_cli"

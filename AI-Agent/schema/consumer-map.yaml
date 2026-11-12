@@ -1,0 +1,28 @@
+---
+status: active
+tags: [consumer-map]
+created: 2026-10-23
+---
+
+# Consumer map — the single source of truth for the live counters
+
+counters:
+  skills:       16    # the number of folders in AI-Agent/skills/ (skill_args-tests, audit consumer_drift)
+  tools:        32    # the number of scripts in AI-Agent/scripts/ (a *-tests.py file is not counted); the release exporter checks it against the built tree
+
+# Registry mapping changed paths -> consumer suites that must run (mandatory broad-set fallback for uncovered paths:
+# silence is never an option).
+suites:
+  stem_prefix:    "AI-Agent/scripts/"
+  time_cap_seconds: 300
+  prefixes:
+    - "AI-Agent/skills/|skill_args"
+    - "AI-Agent/schema/|skill_args,derive_live_arch"
+    - "AI-Agent/scripts/audit.py|audit"
+    - "AI-Agent/scripts/_vaultlib.py|cli_contract,audit"
+    - "AI-Agent/scripts/|cli_contract"
+    - "src/stratum_cli/|cli_contract"
+    - "pyproject.toml|cli_contract"
+    - "03-Resources/Live-Agent-Architecture.md|derive_live_arch"
+    - "AI-Agent/gate_baseline.json|audit"
+  fallback: audit, skill_args, derive_live_arch

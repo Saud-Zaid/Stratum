@@ -1,0 +1,15 @@
+{
+  "alwaysUpdateLinks": true,
+  "rightToLeft": false,
+  "showUnsupportedFiles": true,
+  "userIgnoreFilters": [
+    "04-Archive/",
+    "AI-Agent/fixtures/",
+    ".vault-release/",
+    ".venv/",
+    ".cursor/",
+    ".githooks/"
+  ],
+  "newFileLocation": "folder",
+  "newFileFolderPath": "00-Inbox"
+}

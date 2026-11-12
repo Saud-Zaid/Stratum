@@ -1,0 +1,47 @@
+{
+  "quickadd:choice:3618ecb9-5c00-479b-abd8-169803237668": [
+    {
+      "modifiers": [
+        "Mod",
+        "Shift"
+      ],
+      "key": "I"
+    }
+  ],
+  "quickadd:choice:433edbfc-0b13-4e6a-84b6-eda840edb4fb": [
+    {
+      "modifiers": [
+        "Mod",
+        "Shift"
+      ],
+      "key": "L"
+    }
+  ],
+  "quickadd:choice:bc458d31-6ca3-464e-bd9b-e0bb22d49597": [
+    {
+      "modifiers": [
+        "Mod",
+        "Shift"
+      ],
+      "key": "P"
+    }
+  ],
+  "quickadd:choice:59c3ea55-62a4-41e4-8e57-912e9b7fee12": [
+    {
+      "modifiers": [
+        "Mod",
+        "Shift"
+      ],
+      "key": "M"
+    }
+  ],
+  "quickadd:choice:c370e3e2-a2b9-47b4-b5f7-7d9fe9d627a6": [
+    {
+      "modifiers": [
+        "Mod",
+        "Shift"
+      ],
+      "key": "E"
+    }
+  ]
+}

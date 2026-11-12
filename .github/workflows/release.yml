@@ -1,0 +1,39 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: Build the release archive
+        run: uv run python AI-Agent/scripts/export_release.py --package --dist dist
+      - name: Checksums and SBOM
+        run: |
+          cd dist
+          sha256sum *.zip > SHA256SUMS
+          cd ..
+          uv export --format cyclonedx1.5 --no-dev -o dist/sbom.cdx.json
+      - name: Attest the archive and the checksums
+        uses: actions/attest@v4
+        with:
+          subject-path: |
+            dist/*.zip
+            dist/SHA256SUMS
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          flags=""
+          case "${GITHUB_REF_NAME}" in *-*) flags="--prerelease" ;; esac   # v1.0.0-beta.1 is published as a pre-release
+          gh release create "${GITHUB_REF_NAME}" dist/* --title "${GITHUB_REF_NAME}" --notes-file CHANGELOG.md $flags
