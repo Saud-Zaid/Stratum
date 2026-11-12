@@ -96,7 +96,7 @@ def load_key(path: Path | None = None) -> bytes:
     """The same control as in the mediator: a key of >=32 bytes outside the agent's write path."""
     if not path.exists() or path.stat().st_size < 32:
         raise IsolationViolation(f"isolation HMAC key missing or too short: {path}")
-    if VAULT in path.resolve().parents:
+    if VAULT.resolve() in path.resolve().parents:
         raise IsolationViolation("isolation key inside the agent's write path — rejected (condition 25-3)")
     raw = path.read_bytes()
     # A legacy key is exactly 32 raw bytes: strip() would eat a leading/trailing whitespace byte and change the key.
@@ -108,7 +108,7 @@ def ensure_key(path: Path | None = None) -> bytes:
     """Generates the key on first record only; outside the vault with 600 permissions."""
     if path.exists():
         return load_key(path)
-    if VAULT in path.resolve().parents:
+    if VAULT.resolve() in path.resolve().parents:
         raise IsolationViolation("isolation key inside the agent's write path — rejected (condition 25-3)")
     path.parent.mkdir(parents=True, exist_ok=True)
     key = secrets.token_hex(32).encode("ascii")   # 64 hex chars: strip()-safe, 256 bits of CSPRNG

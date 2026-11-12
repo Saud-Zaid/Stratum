@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import shutil
 import sqlite3
 import sys
@@ -281,6 +282,39 @@ def test_d2_flush_spool_respects_throttle_gate():
         med.SPOOL_DIR = orig_spool
         med.THROTTLE_STATE_PATH = orig_ts
         tmp.cleanup()
+
+
+def test_release_creates_its_own_key_and_the_mother_never_does():
+    """A release has no key to inherit: the first need creates one (64 hex, outside the vault, 0600). The mother vault's missing key stays a hard stop."""
+    d = tempfile.TemporaryDirectory()
+    orig = (med.VAULT, med.KEY_PATH, dict(os.environ), med.LEGACY_KEY_PATH)
+    try:
+        v = Path(d.name) / "vault"
+        (v / "AI-Agent" / "config").mkdir(parents=True)
+        med.VAULT = v
+        os.environ["XDG_STATE_HOME"] = str(Path(d.name) / "state")
+        os.environ["LOCALAPPDATA"] = str(Path(d.name) / "state")
+        (v / "AI-Agent" / "config" / "release_profile.yaml").write_text("mode: vault\n", encoding="utf-8")
+        med.LEGACY_KEY_PATH = Path(d.name) / "legacy" / "mediator-hmac.key"   # the machine's own key must not leak into the test
+        med.KEY_PATH = med.default_key_path()
+        try:
+            med.load_key()
+            raise AssertionError("the mother vault must not create a missing key")
+        except med.KeyViolation:
+            pass
+        (v / "AI-Agent" / "config" / "release_profile.yaml").write_text("mode: release\n", encoding="utf-8")
+        med.KEY_PATH = med.default_key_path()
+        k = med.load_key()
+        assert len(k) == 64 and all(c in b"0123456789abcdef" for c in k), "the created key is not 64 hex characters"
+        assert med.KEY_PATH == Path(d.name) / "state" / "stratum" / "mediator-hmac.key", med.KEY_PATH
+        assert med.load_key() == k, "a second load must return the same key"
+        if os.name != "nt":
+            assert med.KEY_PATH.stat().st_mode & 0o777 == 0o600, "the key must be born 0600"
+    finally:
+        med.VAULT, med.KEY_PATH, med.LEGACY_KEY_PATH = orig[0], orig[1], orig[3]
+        os.environ.clear()
+        os.environ.update(orig[2])
+        d.cleanup()
 
 
 if __name__ == "__main__":

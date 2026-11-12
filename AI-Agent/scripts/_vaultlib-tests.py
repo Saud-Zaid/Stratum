@@ -309,6 +309,7 @@ try:
         L.os.environ["TIKTOKEN_CACHE_DIR"] = str(TMP / "tk")
         ok("T47-cache-dir-env", L.default_tiktoken_cache_dir() == TMP / "tk")
         del L.os.environ["TIKTOKEN_CACHE_DIR"]
+        L.os.environ.pop("LOCALAPPDATA", None)   # Windows reads this instead of the XDG variables
         L.os.environ["XDG_CACHE_HOME"] = str(TMP / "xdgc")
         ok("T48-cache-dir-xdg", L.default_tiktoken_cache_dir() == TMP / "xdgc" / "tiktoken")
         L.os.environ["TIKTOKEN_CACHE_DIR"] = str(TMP / "tk")
@@ -397,7 +398,7 @@ try:
     # T63-T67: session_db_path precedence, CLUB_AREA=None / non-file guard
     _env = dict(os.environ)
     try:
-        for k in ("STRATUM_SESSION_DB", "XDG_DATA_HOME"):
+        for k in ("STRATUM_SESSION_DB", "XDG_DATA_HOME", "LOCALAPPDATA"):
             os.environ.pop(k, None)
         os.environ["STRATUM_SESSION_DB"] = str(TMP / "x.db")
         ok("T63-session-db-env-wins", L.session_db_path() == TMP / "x.db", L.session_db_path())

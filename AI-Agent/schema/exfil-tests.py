@@ -34,6 +34,9 @@ class ExfilTestSelfTests(unittest.TestCase):
         self.spool = self.tmp / "spool"
         self.spool.mkdir()
         # an isolated environment: temporarily redirect the mediator's and the tool's paths
+        self._orig_key = mediator.KEY_PATH
+        mediator.KEY_PATH = self.tmp / "test-hmac.key"   # a throwaway key: the measurement must not depend on a machine's own
+        mediator.KEY_PATH.write_text("k" * 64, encoding="ascii")
         self._orig_db = mediator.DB_PATH
         self._orig_spool = mediator.SPOOL_DIR
         mediator.DB_PATH = self.db
@@ -44,6 +47,7 @@ class ExfilTestSelfTests(unittest.TestCase):
         exfil_test.SPOOL_DIR = self.spool
 
     def tearDown(self):
+        mediator.KEY_PATH = self._orig_key
         mediator.DB_PATH = self._orig_db
         mediator.SPOOL_DIR = self._orig_spool
         exfil_test.DB_PATH = self._orig_tool_db

@@ -14,6 +14,10 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
+    # Windows is experimental in the beta: its result is shown but does not fail the build
+    continue-on-error: ${{ matrix.os == 'windows-latest' }}
+    env:
+      PYTHONUTF8: "1"
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5

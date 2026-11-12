@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import shutil
 import tempfile
+import os
 import unittest
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -157,7 +158,8 @@ class KeyStorageTests(unittest.TestCase):
         k1 = ensure_key(p)
         self.assertEqual(len(k1), 64)
         int(k1.decode("ascii"), 16)
-        self.assertEqual(p.stat().st_mode & 0o777, 0o600)
+        if os.name != "nt":   # Windows has no POSIX permission bits
+            self.assertEqual(p.stat().st_mode & 0o777, 0o600)
         self.assertEqual(ensure_key(p), k1)
         self.assertEqual(load_key(p), k1)
 
@@ -204,8 +206,10 @@ class KeyStorageTests(unittest.TestCase):
             self.assertEqual(isolation.default_key_path(), isolation.LEGACY_KEY_PATH)
             (vault / "AI-Agent" / "config" / "release_profile.yaml").write_text("mode: release\n", encoding="utf-8")
             isolation.os.environ["XDG_STATE_HOME"] = str(self.tmp / "xdg")
+            isolation.os.environ["LOCALAPPDATA"] = str(self.tmp / "xdg")   # Windows reads this one instead
             self.assertEqual(isolation.default_key_path(), self.tmp / "xdg" / "stratum" / "isolation-hmac.key")
             del isolation.os.environ["XDG_STATE_HOME"]
+            isolation.os.environ.pop("LOCALAPPDATA", None)
             self.assertEqual(isolation.default_key_path(), Path.home() / ".local" / "state" / "stratum" / "isolation-hmac.key")
         finally:
             isolation.VAULT = orig_vault

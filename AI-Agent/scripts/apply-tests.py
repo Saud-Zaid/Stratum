@@ -137,6 +137,9 @@ def t4_sandbox_escape():
 
 def t5_rollback_mid_batch():
     """Mid-batch write failure triggers soft rollback of already-written files."""
+    if os.name == "nt":   # Windows ignores the read-only directory bit this scenario relies on
+        print("SKIP t5_rollback_mid_batch: no POSIX directory permissions on Windows")
+        return
     keep = _mkfile(_rel("t5-keep.md"), "keep-original")
     blocker = _mkfile(_rel("t5-blocker"), "blocker")
     os.chmod(blocker, 0o444)  # read-only -> write fails

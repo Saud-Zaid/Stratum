@@ -1,8 +1,17 @@
+# One line ending everywhere: LF. Hashes in release_manifest.json and in the plugin lock are over LF bytes, so a checkout that
+# rewrites line endings (Windows autocrlf) would make every file look modified. setup.cmd and the PowerShell script use no labels
+# and no multi-line constructs that need CRLF.
+* text=auto eol=lf
 *.sh text eol=lf
 .githooks/* text eol=lf
 AI-Agent/vault-python text eol=lf
-*.cmd text eol=crlf
-*.bat text eol=crlf
-*.ps1 text eol=crlf
+*.cmd text eol=lf
+*.bat text eol=lf
+*.ps1 text eol=lf
 *.sqlite3 binary
 *.zip binary
+*.png binary
+*.jpg binary
+*.gif binary
+*.pdf binary
+*.woff2 binary

@@ -40,7 +40,7 @@ def release(version, files, critical=(), migrations=(), breaking=(), cli=(), fv=
     entries = {}
     for rel, (text, pol) in files.items():
         (d / rel).parent.mkdir(parents=True, exist_ok=True)
-        (d / rel).write_text(text, encoding="utf-8")
+        (d / rel).write_bytes(text.encode("utf-8"))   # bytes, so Windows does not turn \n into \r\n and break the hash
         entries[rel] = {"sha256": U.sha256(text.encode("utf-8")), "policy": pol}
     man = {"format_version": fv, "version": version, "files": entries, "critical": list(critical), "migrations": list(migrations),
            "breaking_changes": list(breaking), "cli_migrations": list(cli)}

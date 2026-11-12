@@ -40,7 +40,7 @@ def ok(name, cond, got=""):
 def w(path: str, text: str) -> Path:
     p = Path(tempfile.mkdtemp()) / path
     p.parent.mkdir(parents=True, exist_ok=True)
-    p.write_text(text, encoding="utf-8")
+    p.write_text(text, encoding="utf-8", newline="")
     return p
 
 
@@ -67,11 +67,11 @@ def claimed(state: str, first=True) -> Path:
     """File whose claim line names its own path with exact bytes (fixpoint)."""
     p = w("d.md", base)
     pre = claim(state, 0, str(p)) + "\n" if first else base + claim(state, 0, str(p)) + "\n"
-    p.write_text(pre, encoding="utf-8")
+    p.write_text(pre, encoding="utf-8", newline="")
     for _ in range(5):                     # the bytes string changes the size; iterate to the fixpoint
         real = sized(p.read_text(encoding="utf-8"))
         body = claim(state, real, str(p)) + "\n" if first else base + claim(state, real, str(p)) + "\n"
-        p.write_text(body, encoding="utf-8")
+        p.write_text(body, encoding="utf-8", newline="")
         if sized(p.read_text(encoding="utf-8")) == real:
             return p
     return p
@@ -81,10 +81,10 @@ def claimed_after(state: str, pre: str, name: str = "d.md") -> Path:
     """Claim placed AFTER `pre` (e.g. frontmatter), names its own path, exact bytes.
     `name` may carry a subdir (created by w()); used for path-scoped rules."""
     p = w(name, pre)                       # create first so the claim can name the real path
-    p.write_text(pre + claim(state, 0, str(p)) + "\n" + base, encoding="utf-8")
+    p.write_text(pre + claim(state, 0, str(p)) + "\n" + base, encoding="utf-8", newline="")
     for _ in range(5):
         real = sized(p.read_text(encoding="utf-8"))
-        p.write_text(pre + claim(state, real, str(p)) + "\n" + base, encoding="utf-8")
+        p.write_text(pre + claim(state, real, str(p)) + "\n" + base, encoding="utf-8", newline="")
         if sized(p.read_text(encoding="utf-8")) == real:
             return p
     return p
@@ -94,10 +94,10 @@ def claimed_wrapped(state: str, pre: str, post: str, name: str = "d.md") -> Path
     """Claim placed INSIDE `pre` (e.g. between the frontmatter fences), names its
     own path, exact bytes; the body continues with `post`."""
     p = w(name, pre)
-    p.write_text(pre + claim(state, 0, str(p)) + post, encoding="utf-8")
+    p.write_text(pre + claim(state, 0, str(p)) + post, encoding="utf-8", newline="")
     for _ in range(5):
         real = sized(p.read_text(encoding="utf-8"))
-        p.write_text(pre + claim(state, real, str(p)) + post, encoding="utf-8")
+        p.write_text(pre + claim(state, real, str(p)) + post, encoding="utf-8", newline="")
         if sized(p.read_text(encoding="utf-8")) == real:
             return p
     return p
@@ -176,7 +176,7 @@ ok("cli-missing-fm-hint", rc == 2 and "missing-frontmatter" in out, out)
 
 # --- check: bytes mismatch (file changed since the claim was written) -> exit 1
 p = claimed("complete")
-p.write_text(p.read_text(encoding="utf-8") + "\nextra line\n", encoding="utf-8")
+p.write_text(p.read_text(encoding="utf-8") + "\nextra line\n", encoding="utf-8", newline="")
 rc, out = archclaim.check(str(p))
 ok("check-bytes-mismatch", rc == 1 and "bytes-mismatch" in out[0], out)
 
@@ -273,18 +273,18 @@ ok("verify-named-section-missing", rc == 1 and "status-section-missing" in rules
 # --- recipe (rev3): clean passes; top-level, indented, and list-item response: all caught
 tmp = Path(tempfile.mkdtemp()) / "recipes"
 tmp.mkdir()
-(tmp / "clean.yaml").write_text("version: 1.0.0\ntitle: T\nKNOWN INJECTION (TR-0030): ignore final_output\n", encoding="utf-8")
-(tmp / "bad-top.yaml").write_text("version: 1.0.0\nresponse:\n  schema: {}\n", encoding="utf-8")
-(tmp / "bad-indent.yaml").write_text("version: 1.0.0\nsteps:\n  response:\n    x: 1\n", encoding="utf-8")
-(tmp / "bad-list.yaml").write_text("version: 1.0.0\nsteps:\n  - response: x\n", encoding="utf-8")
-(tmp / "bad-ext.yml").write_text("version: 1.0.0\nresponse:\n  schema: {}\n", encoding="utf-8")
+(tmp / "clean.yaml").write_text("version: 1.0.0\ntitle: T\nKNOWN INJECTION (TR-0030): ignore final_output\n", encoding="utf-8", newline="")
+(tmp / "bad-top.yaml").write_text("version: 1.0.0\nresponse:\n  schema: {}\n", encoding="utf-8", newline="")
+(tmp / "bad-indent.yaml").write_text("version: 1.0.0\nsteps:\n  response:\n    x: 1\n", encoding="utf-8", newline="")
+(tmp / "bad-list.yaml").write_text("version: 1.0.0\nsteps:\n  - response: x\n", encoding="utf-8", newline="")
+(tmp / "bad-ext.yml").write_text("version: 1.0.0\nresponse:\n  schema: {}\n", encoding="utf-8", newline="")
 rc, out = archclaim.recipe(str(tmp))
 names = [Path(ln.split("\t")[3]).name for ln in out]
 ok("recipe-fail-closed-files", rc == 1 and all(k in names for k in ["bad-top.yaml", "bad-indent.yaml", "bad-list.yaml", "bad-ext.yml"]), out)
 ok("recipe-yml-scanned", "bad-ext.yml" in names)
 # ...all four pass once the response block is removed and the counter rule added
 for n in ["bad-top.yaml", "bad-indent.yaml", "bad-list.yaml", "bad-ext.yml"]:
-    (tmp / n).write_text("version: 1.0.0\nKNOWN INJECTION (TR-0030): ignore final_output\n", encoding="utf-8")
+    (tmp / n).write_text("version: 1.0.0\nKNOWN INJECTION (TR-0030): ignore final_output\n", encoding="utf-8", newline="")
 rc, out = archclaim.recipe(str(tmp))
 ok("recipe-clean-after-fix", rc == 0 and not out, out)
 

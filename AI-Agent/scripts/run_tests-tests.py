@@ -41,7 +41,7 @@ def vault(entries_core, entries_mother=(), files=None):
 
 _PASS, _FAIL = "print('ok')\n", "import sys\nprint('boom')\nsys.exit(3)\n"
 _SLOW = "import time\ntime.sleep(30)\n"
-_ORDER = "import os,sys\nopen(os.environ['VAULT'] + '/order.log', 'a').write(sys.argv[0].split('/')[-1] + '\\n')\n"
+_ORDER = "import os,sys\nopen(os.environ['VAULT'] + '/order.log', 'a').write(os.path.basename(sys.argv[0]) + '\\n')\n"
 tmp = []
 try:
     r1 = vault([("t/a-tests.py", "direct", "parallel"), ("t/b-tests.py", "direct", "serial"), ("t/c-tests.py", "direct", "parallel")],
