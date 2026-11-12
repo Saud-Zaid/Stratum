@@ -515,11 +515,11 @@
     },
     "AI-Agent/scripts/restore_pre_upgrade.py": {
       "policy": "replace",
-      "sha256": "e1cd36be80b39027b1e0e3e9e99ce2cdc06061f5c48eea43ee4ea1ecb7d1c8e8"
+      "sha256": "b911ec079e27f17f5a3a476977d4a3837a2b914488048843945cbca0ef4ee939"
     },
     "AI-Agent/scripts/restore_ready-tests.py": {
       "policy": "replace",
-      "sha256": "367e09869568f530bacdb65fc83c8d59d40e9d8097a6071a2baecee1d5eab2df"
+      "sha256": "aca2a08321915e9846fee3e5413c1825736593ab4bfe54acbee1e9c81e90b89e"
     },
     "AI-Agent/scripts/restore_ready.py": {
       "policy": "replace",
@@ -583,7 +583,7 @@
     },
     "AI-Agent/scripts/upgrade_core-tests.py": {
       "policy": "replace",
-      "sha256": "d4b3d51d6410f3196c4f1bef74df586c90d9663181e615dbc15a76faf787823c"
+      "sha256": "c633d6ab0949c94bc38b3491abe4b92ed5ff36fb8714a94e5b169caa405f431b"
     },
     "AI-Agent/scripts/upgrade_core.py": {
       "policy": "replace",
