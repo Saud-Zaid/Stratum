@@ -44,7 +44,7 @@ def release(version, files, critical=(), migrations=(), breaking=(), cli=(), fv=
         entries[rel] = {"sha256": U.sha256(text.encode("utf-8")), "policy": pol}
     man = {"format_version": fv, "version": version, "files": entries, "critical": list(critical), "migrations": list(migrations),
            "breaking_changes": list(breaking), "cli_migrations": list(cli)}
-    (d / "release_manifest.json").write_text(json.dumps(man), encoding="utf-8")
+    (d / "release_manifest.json").write_text(json.dumps(man), encoding="utf-8", newline="")
     return U.Source.from_dir(d), d
 
 
@@ -95,10 +95,10 @@ try:
     ok("U03-same-version-is-a-no-op", rc == 0 and "nothing to do" in out)
     ok("U04-check-is-clean-right-after-an-install", U.check(root, out=lambda *_: None) == 0)
 
-    (root / "AI-Agent/notes.md").write_text("# n\nL1 mine\nl2\nl3\nl4\nl5\nl6\n", encoding="utf-8")      # a local edit near the top
-    (root / "user.md").write_text("my own note\n", encoding="utf-8")
-    (root / "cfg/plugins.json").write_text('["a", "mine"]\n', encoding="utf-8")
-    (root / "cfg/app.json").write_text('{"x": 9}\n', encoding="utf-8")
+    (root / "AI-Agent/notes.md").write_text("# n\nL1 mine\nl2\nl3\nl4\nl5\nl6\n", encoding="utf-8", newline="")      # a local edit near the top
+    (root / "user.md").write_text("my own note\n", encoding="utf-8", newline="")
+    (root / "cfg/plugins.json").write_text('["a", "mine"]\n', encoding="utf-8", newline="")
+    (root / "cfg/app.json").write_text('{"x": 9}\n', encoding="utf-8", newline="")
     v110 = {"AI-Agent/core.py": ("core v2\n", "replace"), "AI-Agent/notes.md": ("# n\nl1\nl2\nl3\nl4\nl5\nL6 theirs\n", "merge"),
             "user.md": ("SHOULD NOT LAND\n", "keep"), "seed.md": ("seed 2\n", "add-only"), "AI-Agent/new.py": ("new\n", "replace"),
             "cfg/plugins.json": ('["a", "b"]\n', "union"), "cfg/app.json": ('{"x": 1, "y": 2}\n', "json-merge")}
@@ -114,7 +114,7 @@ try:
     ok("U10-removed-upstream-and-unmodified-is-deleted", not (root / "AI-Agent/gone.txt").exists(), out)
 
     # ---- a second hop with a rename, a deletion and a replace conflict
-    (root / "AI-Agent/new.py").write_text("new, edited locally\n", encoding="utf-8")
+    (root / "AI-Agent/new.py").write_text("new, edited locally\n", encoding="utf-8", newline="")
     v120 = {"AI-Agent/core.py": ("core v3\n", "replace"), "AI-Agent/new.py": ("new v2\n", "replace"), "lib/moved.py": ("core v3 moved\n", "replace"),
             "AI-Agent/notes.md": ("# n\nl1\nl2\nl3\nl4\nl5\nL6 theirs\n", "merge")}
     mig = [{"from": "1.1.0", "to": "1.2.0", "steps": [{"op": "rename", "from": "AI-Agent/core.py", "to": "lib/old_core.py"}, {"op": "delete", "path": "cfg/app.json"}]}]
@@ -122,11 +122,11 @@ try:
     rc, out = up(root, s120)
     ok("H01-second-hop-applies-the-migration-then-the-content", (root / "lib/old_core.py").is_file() and not (root / "cfg/app.json").exists() and read(root, "lib/moved.py") == "core v3 moved\n", out)
     ok("H02-a-locally-edited-replace-file-is-kept-and-the-upstream-copy-is-parked", read(root, "AI-Agent/new.py") == "new, edited locally\n" and read(root, ".vault-release/conflicts/AI-Agent/new.py.upstream") == "new v2\n" and rc == 1, out)
-    (root / "orphan.txt").write_text("x\n", encoding="utf-8")
+    (root / "orphan.txt").write_text("x\n", encoding="utf-8", newline="")
     r7 = tmp()
     so1, _ = release("1.0.0", {"keep_me.txt": ("v1\n", "replace"), "stay.txt": ("s\n", "replace")})
     up(r7, so1)
-    (r7 / "keep_me.txt").write_text("edited locally\n", encoding="utf-8")
+    (r7 / "keep_me.txt").write_text("edited locally\n", encoding="utf-8", newline="")
     so2, _ = release("1.1.0", {"stay.txt": ("s\n", "replace")})
     rc7, out7 = up(r7, so2)
     ok("H03-a-removed-upstream-file-that-was-modified-locally-is-kept-and-reported", read(r7, "keep_me.txt") == "edited locally\n" and "orphan-kept" in out7 and rc7 == 1, out7)
@@ -135,7 +135,7 @@ try:
     # ---- critical conflict: HIGH conflict-skew writes nothing
     r2 = tmp()
     up(r2, s100)
-    (r2 / "AI-Agent/core.py").write_text("locally changed core\n", encoding="utf-8")
+    (r2 / "AI-Agent/core.py").write_text("locally changed core\n", encoding="utf-8", newline="")
     sk, _ = release("1.1.0", {"AI-Agent/core.py": ("core v2\n", "replace")}, critical=["AI-Agent/core.py"])
     snap = snapshot(r2)
     rc, out = up(r2, sk, dry_run=True)
@@ -145,7 +145,7 @@ try:
     # ---- merge conflict
     r3 = tmp()
     up(r3, s100)
-    (r3 / "AI-Agent/notes.md").write_text("# n\nL1 mine\nl2\nl3\nl4\nl5\nl6\n", encoding="utf-8")
+    (r3 / "AI-Agent/notes.md").write_text("# n\nL1 mine\nl2\nl3\nl4\nl5\nl6\n", encoding="utf-8", newline="")
     sc, _ = release("1.1.0", {"AI-Agent/notes.md": ("# n\nL1 theirs\nl2\nl3\nl4\nl5\nl6\n", "merge")})
     rc, out = up(r3, sc)
     parked = (r3 / ".vault-release/conflicts/AI-Agent/notes.md")
@@ -154,7 +154,7 @@ try:
     # ---- tamper, Zip Slip, archives
     r4 = tmp()
     st, d = release("1.1.0", {"AI-Agent/core.py": ("core v2\n", "replace")})
-    (d / "AI-Agent/core.py").write_text("evil\n", encoding="utf-8")
+    (d / "AI-Agent/core.py").write_text("evil\n", encoding="utf-8", newline="")
     try:
         up(r4, st)
         raised = False
@@ -218,7 +218,7 @@ try:
     # ---- backup and restore
     r6 = tmp()
     up(r6, s100)
-    (r6 / "AI-Agent/core.py").write_text("core v1\n", encoding="utf-8")
+    (r6 / "AI-Agent/core.py").write_text("core v1\n", encoding="utf-8", newline="")
     before = snapshot(r6)
     rc, out = up(r6, s110)
     ok("R01-the-upgrade-made-a-backup-before-writing", rc == 0 and len(RP.backups(r6)) == 1, out)
@@ -247,14 +247,14 @@ try:
     rv = tmp()
     up(rv, s100)
     (rv / "AI-Agent/scripts").mkdir(parents=True, exist_ok=True)
-    (rv / "AI-Agent/scripts/audit.py").write_text("import sys\nsys.exit(0)\n", encoding="utf-8")
+    (rv / "AI-Agent/scripts/audit.py").write_text("import sys\nsys.exit(0)\n", encoding="utf-8", newline="")
     sv, _ = release("1.1.0", {"AI-Agent/core.py": ("core v2\n", "replace")})
     rcv, outv = up(rv, sv, skip_verify=False)
     ok("V01-a-passing-audit-closes-the-upgrade-clean", rcv == 0 and "GATE CLEAR" in outv, outv)
     rv2 = tmp()
     up(rv2, s100)
     (rv2 / "AI-Agent/scripts").mkdir(parents=True, exist_ok=True)
-    (rv2 / "AI-Agent/scripts/audit.py").write_text("import sys\nsys.exit(1)\n", encoding="utf-8")
+    (rv2 / "AI-Agent/scripts/audit.py").write_text("import sys\nsys.exit(1)\n", encoding="utf-8", newline="")
     rcv2, outv2 = up(rv2, sv, skip_verify=False)
     ok("V02-a-failing-audit-exits-1-and-names-the-restore-command", rcv2 == 1 and "restore_pre_upgrade.py --from .vault-release/backups/" in outv2, outv2)
     ok("V03-the-named-backup-restores-the-tree-after-a-failed-verification", RP.restore(rv2, RP.backups(rv2)[-1], out=lambda *_: None) == 0 and read(rv2, "AI-Agent/core.py") == "core v1\n")

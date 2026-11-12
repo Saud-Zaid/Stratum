@@ -383,7 +383,7 @@
     },
     "AI-Agent/scripts/audit_cas-tests.py": {
       "policy": "replace",
-      "sha256": "03506f6d380e4c12f6bd87fcfcb06c3436ae5149dc85410029122a66ac5f34b9"
+      "sha256": "f3a694481908709aa5a81d96379ae40ed7ea73b5dbce3910b1e88f9a386dd1f2"
     },
     "AI-Agent/scripts/cli_contract-tests.py": {
       "policy": "replace",
@@ -531,7 +531,7 @@
     },
     "AI-Agent/scripts/run_tests.py": {
       "policy": "replace",
-      "sha256": "02dc3aee4c0d13f2e78d195db8b73ae10afa1bb856323fdf588493cae8a4818a"
+      "sha256": "1d6c4efbc3abb2a907ef1113633cc18f93126a4eaf1f4bc2f5cc26016a85b29c"
     },
     "AI-Agent/scripts/section-tests.py": {
       "policy": "replace",
@@ -583,7 +583,7 @@
     },
     "AI-Agent/scripts/upgrade_core-tests.py": {
       "policy": "replace",
-      "sha256": "c633d6ab0949c94bc38b3491abe4b92ed5ff36fb8714a94e5b169caa405f431b"
+      "sha256": "14092d23b811636a508b1d3cbb702ab3c38b0a5a1a7cdb38f50795315e031cae"
     },
     "AI-Agent/scripts/upgrade_core.py": {
       "policy": "replace",
