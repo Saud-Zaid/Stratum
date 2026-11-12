@@ -224,7 +224,7 @@ def rotate_injection_log(path: Path = INJECTION_LOG, cap: int | None = None) -> 
     if len(lines) < cap:
         return None
     archive = path.with_name(f"injection-log.{_now()[:10]}.jsonl")
-    path.rename(archive)
+    path.replace(archive)   # rename refuses an existing target on Windows; replace behaves the same everywhere
     return archive
 
 
