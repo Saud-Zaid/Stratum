@@ -236,7 +236,10 @@ try:
         for n, b in members.items():
             zf.writestr(n, b)
     snap = snapshot(r6)
-    ok("R04-a-tampered-backup-is-refused-and-nothing-is-changed", RP.restore(r6, bz, out=lambda *_: None) == 1 and snapshot(r6) == snap)
+    msgs = []
+    rc_t = RP.restore(r6, bz, out=lambda *a: msgs.append(" ".join(map(str, a))))
+    now = snapshot(r6)
+    ok("R04-a-tampered-backup-is-refused-and-nothing-is-changed", rc_t == 1 and now == snap, (rc_t, msgs[:2], sorted(set(now) ^ set(snap))[:3]))
     (bz).write_bytes(b"not a zip")
     ok("R05-a-corrupt-backup-is-refused", RP.restore(r6, bz, out=lambda *_: None) == 1)
 

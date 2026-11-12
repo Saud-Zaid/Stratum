@@ -30,17 +30,17 @@ def backups(root: Path) -> list[Path]:
 
 def restore(root: Path, zpath: Path, out=print) -> int:
     try:
-        zf = zipfile.ZipFile(zpath)
-        meta = json.loads(zf.read("backup.json").decode("utf-8"))
-        assert meta["format"] == 1
-        payload = {}
-        for rel, h in meta["files"].items():
-            data = zf.read(f"files/{safe_rel(rel)}")
-            if hashlib.sha256(data).hexdigest() != h:
-                out(f"RESTORE refused: {rel} in the backup does not match its recorded hash; nothing was changed")
-                return 1
-            payload[rel] = data
-        added = [safe_rel(a) for a in meta["added"]]
+        with zipfile.ZipFile(zpath) as zf:   # closed before anything is written: Windows cannot replace a file that is still open
+            meta = json.loads(zf.read("backup.json").decode("utf-8"))
+            assert meta["format"] == 1
+            payload = {}
+            for rel, h in meta["files"].items():
+                data = zf.read(f"files/{safe_rel(rel)}")
+                if hashlib.sha256(data).hexdigest() != h:
+                    out(f"RESTORE refused: {rel} in the backup does not match its recorded hash; nothing was changed")
+                    return 1
+                payload[rel] = data
+            added = [safe_rel(a) for a in meta["added"]]
     except (OSError, KeyError, ValueError, AssertionError, zipfile.BadZipFile, UpgradeError) as e:
         out(f"RESTORE refused: unreadable backup {zpath.name}: {e.__class__.__name__}: {e}")
         return 1

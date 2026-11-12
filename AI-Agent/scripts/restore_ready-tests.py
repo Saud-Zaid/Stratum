@@ -200,7 +200,7 @@ def t10_local_flag_skips_only_remote():
         RR.VAULT = d2
         broken, _ = RR.run(require_remote=False)
         ok("t10b_local_flag_still_requires_hook", broken is False)
-        shutil.rmtree(d2)
+        _rm(d2)
     finally:
         RR.VAULT, RR.HOOK = old
         _rm(d)
