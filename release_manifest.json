@@ -523,7 +523,7 @@
     },
     "AI-Agent/scripts/restore_ready.py": {
       "policy": "replace",
-      "sha256": "d392aa9f8690f261cc2221b2d707336e259feae89fa706af745d997f96c1bba8"
+      "sha256": "09963537f8c23357f1d6a747048c44d606650dc03887194d61be67df01c28076"
     },
     "AI-Agent/scripts/run_tests-tests.py": {
       "policy": "replace",
