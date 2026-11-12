@@ -18,7 +18,7 @@ import yaml
 from markdown_it import MarkdownIt
 from mdit_py_plugins.front_matter import front_matter_plugin
 
-VAULT = Path(os.environ.get("VAULT", "/vault"))
+VAULT = Path(os.environ.get("VAULT") or Path(__file__).resolve().parents[2])   # the checkout this script lives in, unless VAULT says otherwise
 SKIP_DIRS = {".git", ".obsidian", ".trash", "node_modules", ".venv", ".vault-release"}
 
 try:
