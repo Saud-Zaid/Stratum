@@ -399,12 +399,27 @@ def policy_of(rel: str) -> str:
     return "replace"
 
 
+SKIP_DIRS = (".git", ".vault-release", ".venv", "__pycache__", "node_modules")
+
+
+def tree_files(tree: Path) -> list[str]:
+    """The files a release consists of, as sorted posix paths. In a git checkout that is what git tracks or would track (a CI runner adds
+    .venv and caches that are none of the release); in a bare tree it is every file outside the skipped folders."""
+    if (tree / ".git").exists():
+        r = subprocess.run(["git", "ls-files", "-z", "--cached", "--others", "--exclude-standard"], cwd=tree, capture_output=True)
+        if r.returncode == 0:
+            names = {n.decode("utf-8") for n in r.stdout.split(b"\0") if n}
+            return sorted(n for n in names if (tree / n).is_file())
+    return sorted(f.relative_to(tree).as_posix() for f in tree.rglob("*")
+                  if f.is_file() and not set(f.relative_to(tree).parts[:-1]) & set(SKIP_DIRS))
+
+
 def build_manifest(out: Path) -> dict:
     version = (out / "VERSION").read_text(encoding="utf-8").strip()
     files = {}
-    for f in sorted(out.rglob("*")):
-        rel = f.relative_to(out).as_posix()
-        if not f.is_file() or rel.split("/")[0] in (".git", ".vault-release") or rel == "release_manifest.json":
+    for rel in tree_files(out):
+        f = out / rel
+        if rel.split("/")[0] in (".git", ".vault-release") or rel == "release_manifest.json":
             continue
         files[rel] = {"sha256": hashlib.sha256(f.read_bytes()).hexdigest(), "policy": policy_of(rel)}
     return {"format_version": 2, "version": version, "files": files, "critical": [c for c in CRITICAL_FILES if c in files],
@@ -432,7 +447,7 @@ def _zip(tree: Path, names: list[str], dest: Path) -> int:
 def build_archives(tree: Path, dist: Path) -> dict:
     """base.zip (the core an upgrade reads, at most 500 KB), full.zip (the whole vault) and SHA256SUMS."""
     dist.mkdir(parents=True, exist_ok=True)
-    names = [f.relative_to(tree).as_posix() for f in tree.rglob("*") if f.is_file() and f.relative_to(tree).parts[0] not in (".git", ".vault-release")]
+    names = [n for n in tree_files(tree) if n.split("/")[0] not in (".git", ".vault-release")]
     base = [n for n in names if n in BASE_FILES or n.startswith(BASE_PREFIXES)]
     sizes = {"base.zip": _zip(tree, base, dist / "base.zip"), "full.zip": _zip(tree, names, dist / "full.zip")}
     (dist / "SHA256SUMS").write_text("".join(f"{hashlib.sha256((dist / n).read_bytes()).hexdigest()}  {n}\n" for n in sorted(sizes)), encoding="utf-8")

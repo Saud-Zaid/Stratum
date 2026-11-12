@@ -347,7 +347,7 @@
     },
     "AI-Agent/scripts/_vaultlib.py": {
       "policy": "replace",
-      "sha256": "4ce084cd3fe1fcc79e36a66b9c99ad3fc2442da384659b664d310aa3f53f388e"
+      "sha256": "20a57c9823202e29dc3d2985065641e52d34528870dbd27af7408f2d2d9810fc"
     },
     "AI-Agent/scripts/apply-tests.py": {
       "policy": "replace",
@@ -419,11 +419,11 @@
     },
     "AI-Agent/scripts/export_release-tests.py": {
       "policy": "replace",
-      "sha256": "c0bca686f445dd7886e1a1bd97703d910c48799e0629d752e9bedac5bbc8a317"
+      "sha256": "93ef1eaaf735bd5c78a98f2b45bd4524b78b802129f917dc2085081efc4f749e"
     },
     "AI-Agent/scripts/export_release.py": {
       "policy": "replace",
-      "sha256": "b9bc93a047e666604f2ae2cf39d1af86ec6a5dbf76d2c91e6ab851ae8d4861a1"
+      "sha256": "bca4bddb71d24eefe8c18fce6cff7e9bf25c28233be3ce9ba1a456215564cab1"
     },
     "AI-Agent/scripts/fx02_session_tax-tests.py": {
       "policy": "replace",
