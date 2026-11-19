@@ -359,11 +359,11 @@
     },
     "AI-Agent/scripts/_vaultlib-tests.py": {
       "policy": "replace",
-      "sha256": "6f505a224cf3af4249acc5dd86ee770bd9022414b7f73cbc89c860a8666bea2e"
+      "sha256": "a741bb4e1c2828976906fa777e58161ffe78ba06882069025ebf7b7dbde05c39"
     },
     "AI-Agent/scripts/_vaultlib.py": {
       "policy": "replace",
-      "sha256": "0f230666963c187e48843b51a95d23a8f1efeca4e3a0a219a7a54afa50833015"
+      "sha256": "fb00e3cb0063779041057965effdad34ff2771565cb62baf33af2a7f80ef1c0e"
     },
     "AI-Agent/scripts/agent_adapters-tests.py": {
       "policy": "replace",
@@ -375,7 +375,7 @@
     },
     "AI-Agent/scripts/agent_digest-tests.py": {
       "policy": "replace",
-      "sha256": "f30251cb9134b8858d58212e76449a346fa8aea0fd1dbc10d21ae2230d8be964"
+      "sha256": "ddfec96ad06c6d3df31985ffb05ea8bc3a22b1716143987df24ff44fbcab4999"
     },
     "AI-Agent/scripts/agent_digest.py": {
       "policy": "replace",
@@ -383,7 +383,7 @@
     },
     "AI-Agent/scripts/apply-tests.py": {
       "policy": "replace",
-      "sha256": "55ddc1cd8570a5aad705451bdc2a6e5092288caee685448a319079342c3fe942"
+      "sha256": "a7115d8cdde9ef23568885fbb316cbfc72690758640783ce0d9a3312f48402e7"
     },
     "AI-Agent/scripts/apply.py": {
       "policy": "replace",
@@ -415,7 +415,7 @@
     },
     "AI-Agent/scripts/audit_cas-tests.py": {
       "policy": "replace",
-      "sha256": "dbe98a968b3e967d8d971101768f46ab2b6045391144a62cf9f954e290134441"
+      "sha256": "021b6b74c3a77daa7fd3e92b5e28c2edd78060f594dc5a59a4084aea6d2bd262"
     },
     "AI-Agent/scripts/cli_contract-tests.py": {
       "policy": "replace",
@@ -655,11 +655,11 @@
     },
     "AI-Agent/scripts/vault_mv-tests.py": {
       "policy": "replace",
-      "sha256": "13c9571052f41ff0c74370f6c4f2ddec32eb4ef0a3360cdacb939ffa11c179b4"
+      "sha256": "dbc0363ab670723f42e17d053dc9d07f8532ad2b0adb8695343ff7bb2e09bdd5"
     },
     "AI-Agent/scripts/vault_mv.py": {
       "policy": "replace",
-      "sha256": "6d29bc43a8565abe561c9dc6fb57b6f83b3ab2500983987b926ed1076642cdf3"
+      "sha256": "c0a5bbe359fb400d7792e57fa4bc46a4b0becc29ab23887941e866f5cbd10af0"
     },
     "AI-Agent/scripts/vault_query-tests.py": {
       "policy": "replace",
@@ -923,7 +923,7 @@
     },
     "CHANGELOG.md": {
       "policy": "replace",
-      "sha256": "023f85baf41d408a896d5cee9e4b7703da5dac7cd4128ca71d236ef6810a70b8"
+      "sha256": "e95c42485be0d911ee3fe98d39f6f7277ad72bb4938c8dd2632dba966970cda1"
     },
     "CITATION.cff": {
       "policy": "replace",

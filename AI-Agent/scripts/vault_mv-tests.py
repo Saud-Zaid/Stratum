@@ -135,6 +135,16 @@ g0 = G.Graph(d)
 rc, out, err = mv(d, "Notes/Dup", "root2/Dup.md", "--apply")
 ok("a move that makes a name unique or ambiguous keeps every edge", rc == 0 and edges_ok(d, g0, "Notes/Dup.md", "root2/Dup.md"), (rc, err[:300]))
 
+# --- CRLF notes (a Windows vault): the apply guard hashes the file's own bytes, so the move must keep the line endings
+d = Path(tempfile.mkdtemp(prefix="vmv-crlf-"))
+(d / "Target.md").write_bytes(b"# Target\r\n\r\nbody\r\n")
+(d / "Linker.md").write_bytes(b"# Linker\r\n\r\nsee [[Target]] and [t](Target.md)\r\n")
+_sh = lambda *c: subprocess.run(["git", "-C", str(d)] + list(c), capture_output=True, text=True, encoding="utf-8", errors="replace", check=True)
+_sh("init", "-q"); _sh("config", "user.email", "t@t"); _sh("config", "user.name", "t"); _sh("config", "core.autocrlf", "false"); _sh("add", "-A"); _sh("commit", "-q", "-m", "init")
+rc, out, err = mv(d, "Target", "Moved.md", "--apply")
+_linker = (d / "Linker.md").read_bytes()
+ok("a move over CRLF notes applies and keeps their line endings", rc == 0 and (d / "Moved.md").is_file() and b"[[Moved]]" in _linker and b"\r\n" in _linker and b"\n" not in _linker.replace(b"\r\n", b""), (rc, err[:200], _linker))
+
 # --- 5 refusals
 d = make(FILES)
 ok("destination exists is refused", mv(d, "Other", "a")[0] == 1)

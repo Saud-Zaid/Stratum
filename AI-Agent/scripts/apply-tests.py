@@ -522,12 +522,15 @@ try:
     real_fsync, real_replace = os.fsync, os.replace
     try:
         os.replace = lambda a, b: (calls.append("replace"), real_replace(a, b))[1]
-        os.fsync = lambda fd: (calls.append("dir-fsync" if os.path.isdir("/proc/self/fd/%d" % fd) else "file-fsync"), real_fsync(fd))[1]
+        import stat as _stat
+        is_dir = lambda fd: _stat.S_ISDIR(os.fstat(fd).st_mode)   # not /proc: that exists on Linux only
+        os.fsync = lambda fd: (calls.append("dir-fsync" if is_dir(fd) else "file-fsync"), real_fsync(fd))[1]
         ap._write_atomic(os.path.join(TV, "dur.md"), "durable\n")
-        order_ok = calls[-2:] == ["replace", "dir-fsync"]
+        # Windows has no O_DIRECTORY, so there the directory fsync is skipped by design and the rename is the last call
+        order_ok = calls[-2:] == ["replace", "dir-fsync"] if hasattr(os, "O_DIRECTORY") else calls[-1:] == ["replace"]
         def boom(fd):
             raise OSError("no directory fsync here")
-        os.fsync = lambda fd: boom(fd) if os.path.isdir("/proc/self/fd/%d" % fd) else real_fsync(fd)
+        os.fsync = lambda fd: boom(fd) if is_dir(fd) else real_fsync(fd)
         ap._write_atomic(os.path.join(TV, "dur2.md"), "still written\n")
         survived = open(os.path.join(TV, "dur2.md"), encoding="utf-8").read() == "still written\n"
     finally:

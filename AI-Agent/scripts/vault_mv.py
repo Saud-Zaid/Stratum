@@ -230,7 +230,8 @@ def plan_move(g: G.Graph, old: str, new: str):
     ops, counts = [], {}
     for src in g.files:
         src_new = new if src == old else src
-        text = (g.vault / src).read_text(encoding="utf-8", errors="replace")
+        with open(g.vault / src, encoding="utf-8", errors="replace", newline="") as _fh:   # keep CRLF: the apply guard hashes the file's own bytes
+            text = _fh.read()
         if "[[" not in text and "](" not in text:
             continue
         ed = rewrite_text(g, g2, old, new, src, src_new, text)
