@@ -48,7 +48,8 @@ def vault(entries_core, entries_mother=(), files=None):
 
 _PASS, _FAIL = "print('ok')\n", "import sys\nprint('boom')\nsys.exit(3)\n"
 _SLOW = "import time\ntime.sleep(30)\n"
-_ORDER = "import os,sys\nopen(os.environ['VAULT'] + '/order.log', 'a').write(os.path.basename(sys.argv[0]) + '\\n')\n"
+# one file per test script (two processes appending to one shared file lose a line on Windows), stamped with the clock at run time
+_ORDER = "import os,sys,time\nopen(os.environ['VAULT'] + '/order-' + os.path.basename(sys.argv[0]) + '.log', 'w').write(str(time.time_ns()))\n"
 tmp = []
 try:
     r1 = vault([("t/a-tests.py", "direct", "parallel"), ("t/b-tests.py", "direct", "serial"), ("t/c-tests.py", "direct", "parallel")],
@@ -74,7 +75,7 @@ try:
     r3 = vault([("t/p1-tests.py", "direct", "parallel"), ("t/s1-tests.py", "direct", "serial"), ("t/p2-tests.py", "direct", "parallel")],
                files={"t/p1-tests.py": _ORDER, "t/s1-tests.py": _ORDER, "t/p2-tests.py": _ORDER}); tmp.append(r3)
     RT.run_plan(r3, RT.load_plan(r3), jobs=2, timeout=20)
-    order = (r3 / "order.log").read_text(encoding="utf-8").split()
+    order = [n for _, n in sorted((int(f.read_text(encoding="utf-8")), f.name[len("order-"):-len(".log")]) for f in r3.glob("order-*.log"))]
     ok("T11-the-serial-lane-runs-after-the-parallel-lane", order[-1] == "s1-tests.py" and sorted(order[:2]) == ["p1-tests.py", "p2-tests.py"], order)
 
     r4 = vault([("t/skip-tests.py", "direct", "parallel"), ("t/ok-tests.py", "direct", "parallel")], files={"t/skip-tests.py": "import sys\nprint('inputs absent')\nsys.exit(77)\n", "t/ok-tests.py": _PASS}); tmp.append(r4)

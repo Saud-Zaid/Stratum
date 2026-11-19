@@ -15,6 +15,7 @@ All notable changes to this project are documented in this file. The format foll
 ### Fixed
 - An upgrade removes the empty folders that a file removed upstream leaves behind (a folder that still holds a local file stays).
 - An upgrade also replaces the installed `release_manifest.json`; before, it kept the previous release's file list and version.
+- A test of the test runner's lane order no longer loses a line when two scripts write at once on Windows.
 - GETTING-STARTED says that the setup scripts and the whole test suite pass on Windows in CI.
 
 ### Changed
