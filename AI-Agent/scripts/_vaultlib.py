@@ -417,6 +417,20 @@ def _open_index(p: Path) -> Any:
     return conn
 
 
+def retry_locked(fn, attempts: int = 8, pause: float = 0.15):
+    """Run fn(), retrying while SQLite reports a lock held by another process. Switching a new store to WAL mode ignores
+    busy_timeout (two audits starting together on Windows hit it), so the caller waits and tries again; any other error is raised."""
+    import sqlite3
+    for n in range(attempts):
+        try:
+            return fn()
+        except sqlite3.OperationalError as exc:
+            msg = str(exc).lower()
+            if n == attempts - 1 or not ("locked" in msg or "busy" in msg):
+                raise
+            time.sleep(pause * (n + 1))
+
+
 def get_vault_index_db(db_path: Path | None = None) -> Any:
     """Open the derived vault-index store (SQLite, WAL). The store is disposable: an unreadable file or a
     schema version other than INDEX_SCHEMA_VERSION is deleted and rebuilt, with a warning on stderr, never read.
@@ -427,11 +441,11 @@ def get_vault_index_db(db_path: Path | None = None) -> Any:
     why = ""
     conn = None
     try:
-        conn = _open_index(p)
+        conn = retry_locked(lambda: _open_index(p))
         version = conn.execute("PRAGMA user_version").fetchone()[0]
         has_tables = conn.execute("SELECT COUNT(*) FROM sqlite_master WHERE type = 'table'").fetchone()[0] > 0
         if version == INDEX_SCHEMA_VERSION or (version == 0 and not has_tables):
-            _init_index_schema(conn)
+            retry_locked(lambda: _init_index_schema(conn))
             return conn
         why = f"schema version {version}, expected {INDEX_SCHEMA_VERSION}"
         conn.close()

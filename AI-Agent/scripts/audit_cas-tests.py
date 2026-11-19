@@ -330,7 +330,7 @@ def test_concurrent_runs_share_one_store():
         con.close()
         ok("T29-concurrent-runs-safe",
            all(p.returncode in (0, 1) for p in procs) and all("CACHE disabled" not in o[0] for o in outs) and integrity == "ok" and rows > (1000 if sum(1 for _ in VAULT_DIR.rglob("*.md")) > 500 else 10),
-           f"rc={[p.returncode for p in procs]} integrity={integrity} rows={rows}")
+           f"rc={[p.returncode for p in procs]} integrity={integrity} rows={rows} " + " | ".join(l for o in outs for l in (o[0] + o[1]).splitlines() if "isabled" in l)[:400])
 
 
 def test_code_fingerprint_follows_dynamic_imports():

@@ -890,6 +890,28 @@ finally:
     _sq.connect = _real_connect
 ok("T87-corrupt-index-open-closes-its-connection-before-raising", _raised and _TrackedConn.closed_count == 1, (_raised, _TrackedConn.closed_count))
 
+# T88: a store locked by another process is retried, not given up on; other errors still raise at once
+_calls = []
+def _locked_twice():
+    _calls.append(1)
+    if len(_calls) < 3:
+        raise _sq.OperationalError("database is locked")
+    return "opened"
+ok("T88-retry-locked-waits-out-a-lock-and-returns", L.retry_locked(_locked_twice, pause=0.0) == "opened" and len(_calls) == 3, len(_calls))
+def _other():
+    raise _sq.OperationalError("no such table: x")
+try:
+    L.retry_locked(_other, pause=0.0); _other_raised = False
+except _sq.OperationalError:
+    _other_raised = True
+_n = []
+def _always_locked():
+    _n.append(1); raise _sq.OperationalError("database is locked")
+try:
+    L.retry_locked(_always_locked, attempts=3, pause=0.0); _gave_up = False
+except _sq.OperationalError:
+    _gave_up = len(_n) == 3
+ok("T88b-other-errors-raise-at-once-and-a-lasting-lock-gives-up-after-the-attempts", _other_raised and _gave_up, (_other_raised, _gave_up))
 F, P = sum(1 for _, c, _ in R if not c), sum(1 for _, c, _ in R if c)
 print(f"VAULTLIB-TESTS {P}/{len(R)}")
 for name, c, got in R:
