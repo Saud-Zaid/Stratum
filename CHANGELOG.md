@@ -33,7 +33,7 @@ All notable changes to this project are documented in this file. The format foll
 - Test suites that failed on Windows (permission bits, symlink privilege, CRLF in shell hooks) and on a fresh release tree (optional extractor, finding floor, upgrade copy, a parallel race) now pass or skip with a stated reason.
 - Every subprocess call in text mode names its UTF-8 encoding, and the git calls turn path quoting off, so output and non-ASCII file names no longer depend on the console code page.
 - The front matter parser uses libyaml when the install has it, with the same results and a pure-Python fallback.
-- A corrupt vault index store is rebuilt on Windows too: the connection is closed before the file is deleted.
+- A corrupt vault index store is rebuilt on Windows too: no connection is left open on the file when it is deleted.
 - `vault_mv.py` keeps CRLF line endings, so moving a note in a Windows vault no longer fails the apply guard.
 - Tests that assumed Linux paths (`/proc`, `.local`, XDG) now follow the platform, so macOS and Windows runs measure the code and not the test.
 - Five traps no longer cite fixture files that the release does not ship, and the `obsidian-markdown` skill no longer carries a placeholder link.

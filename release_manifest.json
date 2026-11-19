@@ -359,11 +359,11 @@
     },
     "AI-Agent/scripts/_vaultlib-tests.py": {
       "policy": "replace",
-      "sha256": "a741bb4e1c2828976906fa777e58161ffe78ba06882069025ebf7b7dbde05c39"
+      "sha256": "3ab77cbff7639fc0bc2d7dd6941003d0bd36f7a7fb03c1bea3d62f6b526b9e6c"
     },
     "AI-Agent/scripts/_vaultlib.py": {
       "policy": "replace",
-      "sha256": "fb00e3cb0063779041057965effdad34ff2771565cb62baf33af2a7f80ef1c0e"
+      "sha256": "2021261ba4b07bef03edca3d8fc8ebf80648b69063ade5cee00b96a8dacc2377"
     },
     "AI-Agent/scripts/agent_adapters-tests.py": {
       "policy": "replace",
@@ -923,7 +923,7 @@
     },
     "CHANGELOG.md": {
       "policy": "replace",
-      "sha256": "e95c42485be0d911ee3fe98d39f6f7277ad72bb4938c8dd2632dba966970cda1"
+      "sha256": "fcfda53284c1e94993764981e16145dd897fb7d63da04b48506cecc102481f67"
     },
     "CITATION.cff": {
       "policy": "replace",
