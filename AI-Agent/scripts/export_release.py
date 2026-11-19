@@ -136,6 +136,23 @@ def sanitize_script(text: str, name: str = "") -> str:
     return text
 
 
+# Exact text edits for the few shipped scripts whose data names a tool the release does not carry. The edits live in
+# AI-Agent/config/release-patches/script-edits.yaml (a build input, never shipped, so this exporter does not carry the names either).
+# Each must match exactly once: a changed source line stops the export instead of silently shipping the name.
+def load_release_edits(root: Path) -> dict:
+    f = root / "AI-Agent/config/release-patches/script-edits.yaml"
+    return (yaml.safe_load(f.read_text(encoding="utf-8")) or {}).get("edits", {}) if f.is_file() else {}
+
+
+def apply_release_edits(text: str, rel: str, edits: dict | None = None) -> str:
+    for e in (edits or {}).get(rel, []):
+        old, new = e["old"], e["new"]
+        if text.count(old) != 1:
+            raise ExportError(f"{rel}: the release edit expects its text exactly once, found {text.count(old)}: {old[:60]!r}")
+        text = text.replace(old, new)
+    return text
+
+
 def derive_profile(root: Path) -> str:
     """The release profile: the mother's release_profile.yaml with release_profile.patch.yaml applied, validated, as block YAML."""
     from _vaultlib import PatchError, UNTOUCHABLE_CHECKS, apply_patch, dump_yaml_block, validate_profile
@@ -586,6 +603,7 @@ def write_release(root: Path, out: Path, plan: dict | None = None) -> dict:
         written += 1
 
     obsidian_done = False
+    release_edits = load_release_edits(root)
     for rel, (action, rid, via) in sorted(plan["files"].items()):
         src = root / rel
         if action == "drop":
@@ -597,7 +615,7 @@ def write_release(root: Path, out: Path, plan: dict | None = None) -> dict:
             put(rel, src.read_bytes(), src)
         elif action == "sanitize":
             if rel.endswith(".py"):
-                put(rel, sanitize_script(src.read_text(encoding="utf-8"), rel).encode("utf-8"), src)
+                put(rel, apply_release_edits(sanitize_script(src.read_text(encoding="utf-8"), rel), rel, release_edits).encode("utf-8"), src)
             else:
                 put(rel, src.read_bytes(), src)
         elif action == "seed":

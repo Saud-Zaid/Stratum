@@ -4,6 +4,22 @@ All notable changes to this project are documented in this file. The format foll
 
 ## [Unreleased]
 
+## [1.0.0-beta.3] - 2026-11-20
+
+### Added
+- `enable_mcp.py --status` shows the port written to `.mcp.json` next to the port the plugin last bound, and warns when they differ (Obsidian rebinds within 27200 to 27212), so a stale connection URL is visible.
+
+### Removed
+- Optional tooling that is distributed separately, its tests and its CI step are no longer part of the free release. An upgrade removes the files that were not modified.
+
+### Fixed
+- An upgrade removes the empty folders that a file removed upstream leaves behind (a folder that still holds a local file stays).
+- An upgrade also replaces the installed `release_manifest.json`; before, it kept the previous release's file list and version.
+- GETTING-STARTED says that the setup scripts and the whole test suite pass on Windows in CI.
+
+### Changed
+- The audit runs about 20% faster on a warm cache: the architecture secret scan checks each note once before reading it line by line, and the deferral scan skips notes that cannot produce a finding. The findings are identical.
+
 ## [1.0.0-beta.2] - 2026-11-19
 
 ### Added
@@ -57,6 +73,7 @@ All notable changes to this project are documented in this file. The format foll
 ### Security
 - Plugin code is fetched over HTTPS and verified against pinned SHA-256 hashes; no plugin token is stored in the repository.
 
-[Unreleased]: https://github.com/Saud-Zaid/Stratum/compare/v1.0.0-beta.2...HEAD
+[Unreleased]: https://github.com/Saud-Zaid/Stratum/compare/v1.0.0-beta.3...HEAD
+[1.0.0-beta.3]: https://github.com/Saud-Zaid/Stratum/compare/v1.0.0-beta.2...v1.0.0-beta.3
 [1.0.0-beta.2]: https://github.com/Saud-Zaid/Stratum/compare/v1.0.0-beta.1...v1.0.0-beta.2
 [1.0.0-beta.1]: https://github.com/Saud-Zaid/Stratum/releases/tag/v1.0.0-beta.1

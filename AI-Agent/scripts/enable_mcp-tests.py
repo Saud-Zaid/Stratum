@@ -97,6 +97,22 @@ try:
     ok("M19-other-servers-in-mcp-json-survive-enable-and-disable", json.loads((e / M.MCP_REL).read_text(encoding="utf-8"))["mcpServers"] == {"other": {"url": "x"}})
     ok("M20-help-rc0-unknown-flag-rc2-bad-port-rc2", cli(v, "--help").returncode == 0 and cli(v, "--bogus").returncode == 2 and cli(v, "--port", "80").returncode == 2)
     ok("M21-status-reports-without-secrets", (lambda r: r.returncode == 0 and "enabled" in r.stdout and tok not in r.stdout)(cli(e, "--status")))
+    # Step 9: --status shows the port in .mcp.json against the port the plugin last bound, and warns on drift
+    _sv = vault(data={"mcpTransport": {"livePort": 27203}})
+    M.enable(_sv, out=lambda *_: None)                      # writes the port the plugin last bound (27203)
+    _same = []
+    M.status(_sv, out=_same.append)
+    ok("M21b-status-shows-matching-ports-without-a-warning", any("27203" in l and "plugin last bound 27203" in l for l in _same) and not any("WARNING" in l for l in _same), _same)
+    _d = json.loads((_sv / M.DATA_REL).read_text(encoding="utf-8")); _d["mcpTransport"]["livePort"] = 27207
+    (_sv / M.DATA_REL).write_text(json.dumps(_d), encoding="utf-8")   # Obsidian restarted and the plugin bound another port
+    _drift = []
+    M.status(_sv, out=_drift.append)
+    ok("M21c-status-warns-when-the-plugin-rebound-another-port", any("WARNING" in l and "27203" in l and "27207" in l for l in _drift), _drift)
+    ok("M21d-status-never-prints-the-token", all(_d["mcpTransport"]["bearerToken"] not in l for l in _same + _drift))
+    _nv = vault(data={"mcpTransport": {}})
+    _none = []
+    M.status(_nv, out=_none.append)
+    ok("M21e-status-without-a-config-prints-no-port-line", not any(l.startswith("port:") for l in _none), _none)
 
     _orig_rep, _tries = os.replace, [0]
     def _flaky_rep_em(a, b):

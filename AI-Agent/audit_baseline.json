@@ -1,7 +1,7 @@
 {
   "version": 3,
   "description": "Baseline technical debt and legacy warnings snapshot (Ratchet pattern)",
-  "created": "2026-11-19",
+  "created": "2026-11-20",
   "total_baseline_warnings": 0,
   "findings": []
 }

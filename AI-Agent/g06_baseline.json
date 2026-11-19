@@ -1,5 +1,5 @@
 {
-  "created": "2026-11-19",
+  "created": "2026-11-20",
   "project": "Stratum",
   "method": "tiktoken o200k_base first-party measurement",
   "metrics": {
@@ -19,11 +19,11 @@
     "session_ceiling_scope": "live payload of a standard session: dynamic injection plus session context",
     "s13_max_seconds": 5,
     "hit_rate_cadence_days": 14,
-    "schedule_established": "2026-11-19",
+    "schedule_established": "2026-11-20",
     "s16_max_log_lines": 200
   },
   "notes": "Release baseline: measured on the shipped files. The detached signature of a vault owner is not part of a release.",
   "version": "1.0.0",
-  "last_measured": "2026-11-19",
-  "content_hash": "c9af279b6eeecf7813164707cfcaf9703832eb108b74ea1da2af42917c74935a"
+  "last_measured": "2026-11-20",
+  "content_hash": "aa382f3fc5aa818f17e53f4c12b380d2520f859b91db22ad8543a70be33dd033"
 }

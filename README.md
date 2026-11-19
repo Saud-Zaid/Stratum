@@ -1,6 +1,6 @@
 # Stratum
 
-> **Beta.** This is a beta release (`1.0.0-beta.2`). It is usable and tested, but its commands, file layout and defaults may still change before `1.0.0`; every change is listed in [CHANGELOG.md](CHANGELOG.md). Please report problems in the [issue tracker](https://github.com/Saud-Zaid/Stratum/issues).
+> **Beta.** This is a beta release (`1.0.0-beta.3`). It is usable and tested, but its commands, file layout and defaults may still change before `1.0.0`; every change is listed in [CHANGELOG.md](CHANGELOG.md). Please report problems in the [issue tracker](https://github.com/Saud-Zaid/Stratum/issues).
 
 Stratum is an [Obsidian](https://obsidian.md) vault that works with AI agents. It combines **PARA** (where things go) with **Zettelkasten** (how ideas grow), and puts a commit gate, a frontmatter schema, a trap registry and a set of skills around it, so that an agent can work on your notes and be checked mechanically instead of by trust.
 

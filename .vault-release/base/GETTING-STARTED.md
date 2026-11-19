@@ -14,7 +14,7 @@ The repository **is** the vault; there is nothing to import. In order:
 
 Your existing notes are not touched. To bring them in, copy them into `00-Inbox/` and process them from there.
 
-Windows support is experimental in this beta: the setup scripts exist, but the test suite is not yet fully green there. Linux and macOS are the supported systems for now. On Windows replace `.venv/bin/python` with `.venv\Scripts\python.exe` and `.venv/bin/stratum-state` with `.venv\Scripts\stratum-state.exe` in the commands of this guide. Windows on ARM (`win_arm64`) is not supported yet: the pinned `tiktoken` release has no wheel for it, so the install would try to build it from source.
+Windows support is experimental in this beta: the setup scripts and the whole test suite pass on Windows in the project's CI, but they have not been tried by hand on Windows hardware. Linux and macOS are the supported systems for now. On Windows replace `.venv/bin/python` with `.venv\Scripts\python.exe` and `.venv/bin/stratum-state` with `.venv\Scripts\stratum-state.exe` in the commands of this guide. Windows on ARM (`win_arm64`) is not supported yet: the pinned `tiktoken` release has no wheel for it, so the install would try to build it from source.
 
 ## 2. Check the state
 

@@ -1,2 +1,2 @@
-{"kind": "static_childhood", "method": "tiktoken-first-party", "note": "opening entry", "session": "release", "tokens": 416, "ts": "2026-11-19T00:00:00+00:00"}
-{"count": 3, "coverage_pct": 100, "kind": "decision_batch", "method": "tiktoken-first-party", "note": "the three opening decisions are billed", "session": "release", "tokens": 0, "ts": "2026-11-19T00:00:00+00:00"}
+{"kind": "static_childhood", "method": "tiktoken-first-party", "note": "opening entry", "session": "release", "tokens": 416, "ts": "2026-11-20T00:00:00+00:00"}
+{"count": 3, "coverage_pct": 100, "kind": "decision_batch", "method": "tiktoken-first-party", "note": "the three opening decisions are billed", "session": "release", "tokens": 0, "ts": "2026-11-20T00:00:00+00:00"}

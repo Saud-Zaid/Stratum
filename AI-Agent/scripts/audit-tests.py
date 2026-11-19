@@ -88,6 +88,9 @@ ok("DEF-untracked silent inside fenced code", "DEF-untracked" not in rules("X.md
 half = note("- [ ] x [id:: D-02] [state:: \"a\"] \U0001F4C5 2026-12-01\n")
 ok("DEF-incomplete fires without kill", "DEF-incomplete" in rules("H.md", half, D), rules("H.md", half, D))
 ok("DEF-incomplete silent on a full item", "DEF-incomplete" not in rules("V.md", tracked, D))
+ok("DEF early exit: a plain note with a deferral word and no id yields nothing", audit.deferral_findings("P.md", "do it later\n", {}) == [])
+ok("DEF early exit never hides an archived dated task", [f[1] for f in audit.deferral_findings("04-Archive/A.md", "- [ ] x \U0001F4C5 2026-01-01\n", {})] == ["DEF-archived"])
+ok("DEF early exit never hides an untracked deferral in a spec file", [f[1] for f in audit.deferral_findings("S.md", "we will do it later\n", {"tags": ["task-spec"]})] == ["DEF-untracked"])
 ok("DEF-snooze fires at 2", "DEF-snooze" in rules("S.md", note("- [ ] x [id:: D-03] [state:: \"a\"] [kill:: \"b\"] [snoozed:: 2]\n"), D))
 ok("DEF-snooze silent at 1", "DEF-snooze" not in rules("S.md", note("- [ ] x [id:: D-03] [state:: \"a\"] [kill:: \"b\"] [snoozed:: 1]\n"), D))
 
