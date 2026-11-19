@@ -118,6 +118,41 @@ stratum_core:
   t05_actions:
   - u40_zero_arabic_ast
   - u44_posix_stratum_scope
+- path: AI-Agent/scripts/vault_graph-tests.py
+  runner: direct
+  lane: parallel
+  t05_actions:
+  - u40_zero_arabic_ast
+- path: AI-Agent/scripts/vault_mv-tests.py
+  runner: direct
+  lane: parallel
+  t05_actions:
+  - u40_zero_arabic_ast
+- path: AI-Agent/scripts/vault_query-tests.py
+  runner: direct
+  lane: parallel
+  t05_actions:
+  - u40_zero_arabic_ast
+- path: AI-Agent/scripts/agent_adapters-tests.py
+  runner: direct
+  lane: serial
+  t05_actions:
+  - u40_zero_arabic_ast
+- path: AI-Agent/scripts/agent_digest-tests.py
+  runner: direct
+  lane: serial
+  t05_actions:
+  - u40_zero_arabic_ast
+- path: AI-Agent/scripts/gate_log-tests.py
+  runner: direct
+  lane: serial
+  t05_actions:
+  - u40_zero_arabic_ast
+- path: AI-Agent/scripts/tokmeter-tests.py
+  runner: direct
+  lane: serial
+  t05_actions:
+  - u40_zero_arabic_ast
 - path: AI-Agent/scripts/g06-tests.py
   runner: direct
   lane: serial

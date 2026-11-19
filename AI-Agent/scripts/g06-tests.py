@@ -76,6 +76,22 @@ def run():
             if _f.name == "s13_scan_file_never_returns_none":
                 ok(False, "sanity filter failed unexpectedly")
 
+    # 4b. 2026-11-19: only a real reference to the ledger counts (the DB path, an import, a dynamic import by name), not the bare word.
+    for nm, body, want in (
+        ("data_word.py", 'SCHEMA_UNITS = {"decision_ledger", "mediator"}\nconn.commit()\n', False),
+        ("db_path.py", 'DB = "decision-ledger.sqlite3"\nconn.commit()\n', True),
+        ("import_mod.py", "import decision_ledger\nconn.commit()\n", True),
+        ("from_mod.py", "from decision_ledger import append_decision\nappend_decision(1)\n", True),
+        ("dyn.py", 'import importlib\nm = importlib.import_module("decision_ledger")\nm.x(); conn.commit()\n', True),
+        ("db_with_mediator.py", 'import mediator\nDB = "decision-ledger.sqlite3"\nconn.commit()\n', False),
+    ):
+        _f = _write_py(tmp, nm, body)
+        try:
+            _flagged = audit.s13_scan_file(_f) is not None
+        except ValueError:      # relative_to(VAULT) fails only when the file was flagged: a fixture outside the vault
+            _flagged = True
+        ok(_flagged == want, f"s13: {nm} is {'flagged' if want else 'not flagged'}")
+
     # 5. Real vault: the gate currently reports zero bypasses (live truth).
     real = []
     for f in sorted((VAULT / "AI-Agent").rglob("*.py")):

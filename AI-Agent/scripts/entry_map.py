@@ -92,7 +92,7 @@ def walk(d: Path, root: Path, patterns: list[str], depth: int, out: list[str]) -
 
 def main() -> None:
     # D6: caps are architectural decisions (depth 3, 200 lines, 8 KB) -- no CLI
-    # override; deepening them requires the owner approval recorded in AD11 C1-04.
+    # override; deepening them requires owner approval recorded in AD11 C1-04.
     import argparse   # stdlib only: this tool is the fallback when state.py or _vaultlib fail, so it imports nothing from the vault
     ap = argparse.ArgumentParser(prog="entry_map", description=__doc__.strip().splitlines()[0],
                                  epilog=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)

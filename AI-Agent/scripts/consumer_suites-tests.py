@@ -100,7 +100,7 @@ ok("T9 real map loads", bool(cfg2["fallback"]) and len(cfg2["prefixes"]) >= 3, c
 # T10: help exits 0 (archmap convention, C17)
 import subprocess
 r = subprocess.run([sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), "consumer_suites.py"), "-h"],
-                   capture_output=True, text=True)
+                   capture_output=True, text=True, encoding="utf-8", errors="replace")
 ok("T10 help exit=0", r.returncode == 0, r.returncode)
 
 # T11-T20 (T-02e, U-42): --staged / --run in a throwaway repo (never the real index)

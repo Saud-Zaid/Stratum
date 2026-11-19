@@ -65,7 +65,7 @@ from memory.
 
 - Every agent gets a distinct deliverable path (or, for retries, exclusive ownership of
   one file).
-- BEFORE any launch or retry, run `python AI-Agent/scripts/archclaim.py
+- BEFORE any launch or retry, run `.venv/bin/python AI-Agent/scripts/archclaim.py
   check <path>` (F1). Exit 2 (COMPLETE with fp=, or IS-DIRECTORY) = no launch; a
   COMPLETE file is done, and a directory is not a checkable target. Exit 1 = either
   SKELETON/PARTIAL (launch only with an explicit completion instruction), BYTES-MISMATCH
@@ -138,7 +138,7 @@ Every launch instruction MUST contain these blocks, in this order:
 
 ### 7. Verify files, never summaries
 
-- After each agent returns, run `python AI-Agent/scripts/archclaim.py
+- After each agent returns, run `.venv/bin/python AI-Agent/scripts/archclaim.py
   verify <path> --sections <required headings> --min-bytes <plan minimum> --targets <scope
   total>` (F2). Exit 0 = accept, exit 1 = retry with the FIND lines as the retry
   instruction. Do not trust the subagent's "completed" text or the session status: agent

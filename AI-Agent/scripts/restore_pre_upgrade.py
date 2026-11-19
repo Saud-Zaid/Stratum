@@ -20,7 +20,7 @@ import zipfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from upgrade_core import RELEASE_DIR, UpgradeError, safe_rel, write_atomic  # noqa: E402
+from upgrade_core import EXECUTABLE_FILES, RELEASE_DIR, UpgradeError, safe_rel, write_atomic  # noqa: E402
 
 
 def backups(root: Path) -> list[Path]:
@@ -45,7 +45,7 @@ def restore(root: Path, zpath: Path, out=print) -> int:
         out(f"RESTORE refused: unreadable backup {zpath.name}: {e.__class__.__name__}: {e}")
         return 1
     for rel, data in payload.items():
-        write_atomic(root / rel, data)
+        write_atomic(root / rel, data, executable=(rel in EXECUTABLE_FILES))
         out(f"  RESTORED {rel}")
     for rel in added:
         f = root / rel

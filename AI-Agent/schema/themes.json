@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "AD13 Semantic Palette & Dark Theme Matrix",
+  "title": "Semantic Palette & Dark Theme Matrix",
   "description": "Unified visual identity and dark contrast themes for architecture diagrams, SVG generation, and terminal interfaces.",
   "version": "1.0.0",
   "default_theme": "catppuccin_macchiato",
@@ -51,7 +51,7 @@
       "container_bg": "#0f172a",
       "border": "#94a3b8",
       "text": "#f1f5f9",
-      "description": "the owner UI Controls, Obsidian Bridge, Topology Grids"
+      "description": "UI Controls, Obsidian Bridge, Topology Grids"
     }
   },
   "themes": {

@@ -23,7 +23,7 @@ def ok(name, cond, got=""):
 def run_cli(*args):
     return subprocess.run(
         [sys.executable, str(Path(__file__).parent / "outline.py"), *args],
-        capture_output=True, text=True,
+        capture_output=True, text=True, encoding="utf-8", errors="replace",
         env={**os.environ, "VAULT": str(VAULT)})
 
 

@@ -34,7 +34,7 @@ MEMLOG = VAULT / "AI-Agent" / "state" / "session-memory.jsonl"
 
 def _state_text() -> str:
     r = subprocess.run([sys.executable, str(STATE), "--days", "1"],
-                       capture_output=True, text=True, timeout=60)
+                       capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=60)
     return r.stdout
 
 

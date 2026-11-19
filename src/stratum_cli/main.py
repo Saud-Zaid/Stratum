@@ -20,12 +20,44 @@ def find_vault(start: Path | None = None) -> Path:
     raise SystemExit("stratum: no vault found (run inside a vault, or set VAULT)")
 
 
+def _force_utf8_stdio() -> None:
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError):
+            pass
+
+
+def _default_tiktoken_cache() -> None:
+    if os.environ.get("TIKTOKEN_CACHE_DIR"):
+        return
+    base = os.environ.get("LOCALAPPDATA") or os.environ.get("XDG_CACHE_HOME") or str(Path.home() / ".cache")
+    os.environ["TIKTOKEN_CACHE_DIR"] = str(Path(base) / "tiktoken")
+
+
+def _warn_stale_lock(vault: Path) -> None:
+    """Same advisory as vault-python: a uv.lock newer than the setup stamp warns once and never blocks."""
+    import hashlib
+    stamp, lock = vault / ".venv" / ".stratum-lock-sha256", vault / "uv.lock"
+    try:
+        if stamp.is_file() and lock.is_file():
+            want = hashlib.sha256(lock.read_bytes()).hexdigest()
+            if want != stamp.read_text(encoding="ascii").strip():
+                print("stratum: .venv is older than uv.lock - run setup to refresh it.", file=sys.stderr)
+    except OSError:
+        pass
+
+
 def run_tool(script: str, argv: list[str] | None = None) -> None:
     vault = find_vault()
     path = vault / "AI-Agent" / "scripts" / script
     if not path.is_file():
         raise SystemExit(f"stratum: {path} not found")
     os.environ.setdefault("VAULT", str(vault))
+    os.environ.setdefault("PYTHONUTF8", "1")
+    _force_utf8_stdio()
+    _default_tiktoken_cache()
+    _warn_stale_lock(vault)
     sys.path.insert(0, str(path.parent))
     sys.argv = [str(path), *(sys.argv[1:] if argv is None else argv)]
     runpy.run_path(str(path), run_name="__main__")

@@ -130,7 +130,7 @@ ok("T21-missing-log-is-empty", G.mem_stats("c1") == {"files": 0, "loads": 0, "re
 
 def _cli(*a, **env):
     e = dict(os.environ, **env)
-    return subprocess.run([sys.executable, str(Path(G.__file__).resolve()), *a], capture_output=True, text=True, env=e, timeout=60)
+    return subprocess.run([sys.executable, str(Path(G.__file__).resolve()), *a], capture_output=True, text=True, encoding="utf-8", errors="replace", env=e, timeout=60)
 
 
 ok("T22-help-rc0", _cli("--help").returncode == 0 and _cli("-h").returncode == 0)

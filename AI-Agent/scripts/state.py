@@ -12,6 +12,7 @@ import socket
 import subprocess
 import sys
 import time
+import unicodedata
 from pathlib import Path
 
 from _vaultlib import force_utf8_stdio, locale_value, standard_parser, VAULT, Pause, load_profile, frontmatter, iter_md, normalize_ar, parse, pause_window, read, rel as vrel, sections
@@ -34,7 +35,9 @@ OPEN = re.compile(r"^\s*- \[ \]\s*(.+)$")
 DEF_LINE = re.compile(r"^\s*- \[ \].*\[id::\s*(D-\d+)\]")
 TAG_COUNT = re.compile(r'\[state::\s*"([\w/-]+) count >= (\d+)"\]')
 MONTHS = dict(locale_value("MONTHS", {}))          # Arabic month names; empty in a release
-DIGITS = str.maketrans(locale_value("DIGITS_FROM", ""), "0123456789" if locale_value("DIGITS_FROM") else "")
+def normalize_digits(s: str) -> str:
+    """Every non-ASCII decimal digit (Arabic-Indic, Extended Arabic-Indic, Devanagari, ...) becomes its ASCII digit, in any locale."""
+    return "".join(str(unicodedata.decimal(c)) if (not c.isascii() and c.isdecimal()) else c for c in s)
 
 
 def _probe(host: str, port: int, af: int) -> bool:
@@ -55,10 +58,14 @@ def _net_preflight() -> str:
     Probes are hard-bounded at 2s each; route presence alone is NOT IPv6 liveness (N6).
     Returns net state: up / v6-only / down. Logs one line to AI-Agent/state/net-preflight.log, or to $STRATUM_NET_LOG when set (N4)."""
     t0 = time.time()
-    v4 = any(_probe(h, 443, socket.AF_INET) for h in ("1.1.1.1", "8.8.8.8"))
-    v6 = any(_probe(h, 443, socket.AF_INET6) for h in ("2606:4700:4700::1111", "2001:4860:4860::8888"))
+    if os.environ.get("STRATUM_SKIP_NET") == "1":   # offline or CI: no probes at all; the state stays visible as `skipped`, never silent
+        v4 = v6 = False
+        state = "skipped"
+    else:
+        v4 = any(_probe(h, 443, socket.AF_INET) for h in ("1.1.1.1", "8.8.8.8"))
+        v6 = v4 or any(_probe(h, 443, socket.AF_INET6) for h in ("2606:4700:4700::1111", "2001:4860:4860::8888"))   # IPv4 up: IPv6 is not needed
+        state = "up" if v4 else ("v6-only" if v6 else "down")
     secs = round(time.time() - t0, 2)
-    state = "up" if v4 else ("v6-only" if v6 else "down")
     try:
         logp = Path(os.environ["STRATUM_NET_LOG"]) if os.environ.get("STRATUM_NET_LOG") else Path(__file__).resolve().parent.parent / "state" / "net-preflight.log"   # run_tests points it at a temp file
         with logp.open("a", encoding="utf-8") as f:
@@ -71,13 +78,18 @@ def _net_preflight() -> str:
 
 def line_date(line: str):
     """ISO date (2026-09-28) or, where the Arabic locale is present, an Arabic-month date found in a line, else None."""
-    s = line.translate(DIGITS)
-    m = re.search(r"(\d{4})-(\d{2})-(\d{2})", s)
-    if m:
-        return datetime.date(*map(int, m.groups()))
+    s = normalize_digits(line)
+    for m in re.finditer(r"(\d{4})-(\d{2})-(\d{2})", s):
+        try:
+            return datetime.date(*map(int, m.groups()))
+        except ValueError:      # `2026-02-30` or a digit run such as 1234-56-78: not a date, and never a crash at session start
+            continue
     m = re.search(r"(\d{1,2})\s+(\S+)\s+(\d{4})", s)
     if m and m.group(2) in MONTHS:
-        return datetime.date(int(m.group(3)), MONTHS[m.group(2)], int(m.group(1)))
+        try:
+            return datetime.date(int(m.group(3)), MONTHS[m.group(2)], int(m.group(1)))
+        except ValueError:
+            return None
     return None
 
 
@@ -92,10 +104,28 @@ def latest(lines: list[str], n: int = 2) -> list[str]:
     return [l for _, _, l in sorted(dated)[-n:]]
 
 
+STALE_DAYS = 21   # AD13 B2: a work stream with no log line for this long prints one line, not five (state.py is the mandatory session-start command)
+
+
+def active_rows(name: str, nxt: list[str], log: list[str], today: datetime.date, full: bool = False) -> list[str]:
+    """Rows for one active work stream. Fresh streams print up to 3 next steps and the 2 latest log lines; a stream whose
+    newest log line is older than STALE_DAYS (or has none) prints its open count, first next step and last date only."""
+    last = max((line_date(l) for l in log if line_date(l)), default=None)
+    head = f"- {name}\topen {len(nxt)}"
+    stale = not (last is not None and (today - last).days <= STALE_DAYS)
+    if full or not stale:
+        if full:      # --full is a superset of the default: the same last-date and stale marker (a fresh release has empty notes)
+            head += f"\tlast {last or 'none'}" + (" (stale)" if stale else "")
+        return [head] + [f"    next\t{t[:110]}" for t in nxt[:3]] + [f"    log\t{l[2:][:110]}" for l in log]
+    hidden = len(nxt) > 1 or bool(log)      # the hint only when --full would show more
+    row = head + f"\tlast {last or 'none'} (stale" + (", --full)" if hidden else ")")
+    return [row] + ([f"    next\t{nxt[0][:110]}"] if nxt else [])
+
+
 def git(*args) -> str:
     try:
         return subprocess.run(["git", "-C", str(VAULT), "-c", "core.quotepath=off", *args],
-                              capture_output=True, text=True, timeout=30).stdout
+                              capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=30).stdout
     except Exception:
         return ""
 
@@ -295,7 +325,7 @@ def venv_lock_alert(vault: Path = VAULT) -> list[str]:
     return [] if want == have else ["WARN\tvenv-stale\t.venv is older than uv.lock: run setup to refresh it"]
 
 
-def run_default(days: int = 7):
+def run_default(days: int = 7, full: bool = False):
     alerts = upgrade_alerts() + venv_lock_alert()
     if alerts:
         print("## upgrade alerts")
@@ -319,13 +349,16 @@ def run_default(days: int = 7):
     # N1 net-preflight (ledger 304, A_adopt_mechanical): probe-based liveness BEFORE audit.py,
     # because audit.py stalls on network-dependent checks; dead network => hang, not fail.
     net_state = _net_preflight()
-    aud_timeout = 120 if net_state == "up" else 20  # N6: down/v6-only => bound the audit tightly
+    aud_timeout = 120 if net_state in ("up", "skipped") else 20  # N6: down/v6-only => bound the audit tightly
     print(f"PREFLIGHT\taud_timeout={aud_timeout}s")
-    aud = subprocess.run([sys.executable, str(Path(__file__).with_name("audit.py")), "--ratchet"],
-                         capture_output=True, text=True, cwd=str(VAULT), timeout=aud_timeout)
-    for l in (aud.stdout + aud.stderr).splitlines():
-        if l.startswith(("GATE", "BLOCK")):
-            print(l)
+    try:
+        aud = subprocess.run([sys.executable, str(Path(__file__).with_name("audit.py")), "--ratchet"],
+                             capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=str(VAULT), timeout=aud_timeout)
+        for l in (aud.stdout + aud.stderr).splitlines():
+            if l.startswith(("GATE", "BLOCK")):
+                print(l)
+    except subprocess.TimeoutExpired:   # the bound exists so a dead network cannot hang the session start; hitting it must not kill it either
+        print(f"GATE UNKNOWN\taudit did not finish in {aud_timeout}s: run `audit.py --ratchet` before committing")
 
     # 3. Active work streams: next steps + latest progress, from the notes themselves
     print("\n## active work (status: active)")
@@ -336,24 +369,23 @@ def run_default(days: int = 7):
             continue
         nxt = [OPEN.match(l).group(1) for l in section_lines(text, NEXT) if OPEN.match(l)]
         log = latest(section_lines(text, LOG))
-        print(f"- {rel(p)}\topen {len(nxt)}")
-        for t in nxt[:3]:
-            print(f"    next\t{t[:110]}")
-        for l in log:
-            print(f"    log\t{l[2:][:110]}")
+        for row in active_rows(rel(p), nxt, log, datetime.date.today(), full):
+            print(row)
 
     # 4. Due dates within a week
     print("\n## due (<= 7 days)")
     for p in sorted(VAULT.rglob("*.md")):
-        if ".obsidian" in p.parts or "fixtures" in p.parts or vrel(p).startswith("export/"):
+        if ".obsidian" in p.parts or "fixtures" in p.parts or vrel(p).startswith("export/") or not p.is_file():   # not a file: a dangling symlink (read() raised)
             continue
         due = (frontmatter(read(p)) or {}).get("due")
+        if isinstance(due, datetime.datetime):
+            due = due.date()   # `due: 2026-11-20 10:00:00` is a datetime; subtracting a date from it raised TypeError (audit.py had the same fix)
         if isinstance(due, datetime.date) and (due - TODAY).days <= 7:
             print(f"due\t{due}\t{rel(p)}")
 
     # 4b. Deferrals due for attention (package Y): dated within a week, snoozed twice, or a computable state met
     print("\n## deferrals (package Y)")
-    notes = [p for p in VAULT.rglob("*.md") if ".obsidian" not in p.parts and "fixtures" not in p.parts and not vrel(p).startswith("export/")]
+    notes = [p for p in VAULT.rglob("*.md") if ".obsidian" not in p.parts and "fixtures" not in p.parts and not vrel(p).startswith("export/") and p.is_file()]
     tag_n = {}
     for p in notes:
         tags = (frontmatter(read(p)) or {}).get("tags") or []
@@ -368,7 +400,7 @@ def run_default(days: int = 7):
                 continue
             why = []
             d = re.search(r"\U0001F4C5\s*(\d{4}-\d{2}-\d{2})", ln)
-            if d and (datetime.date.fromisoformat(d.group(1)) - TODAY).days <= 7:
+            if d and line_date(d.group(1)) and (line_date(d.group(1)) - TODAY).days <= 7:   # line_date: None for an impossible date
                 why.append(f"dated {d.group(1)}")
             s = re.search(r"\[snoozed::\s*(\d+)\]", ln)
             if s and int(s.group(1)) >= 2:
@@ -504,6 +536,7 @@ def main(argv: list[str] | None = None) -> int:
     ap = standard_parser(__doc__, "state")
     ap.add_argument("--club-selftest", action="store_true", help="run the club window self-test and exit")
     ap.add_argument("--delta-only", action="store_true", help="print only what changed since the last state")
+    ap.add_argument("--full", action="store_true", help="print every active work stream in full (default: streams idle over %d days are one line)" % STALE_DAYS)
     ap.add_argument("--days", type=int, default=DAYS, help="git history window in days (default %d)" % DAYS)
     ns = ap.parse_args(argv)
     if ns.club_selftest:
@@ -515,7 +548,7 @@ def main(argv: list[str] | None = None) -> int:
     if ns.delta_only:
         run_delta_only()
         return 0
-    run_default(ns.days)
+    run_default(ns.days, ns.full)
     return 0
 
 

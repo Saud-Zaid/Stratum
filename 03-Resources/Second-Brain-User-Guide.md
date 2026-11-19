@@ -260,7 +260,7 @@ The lessons learned from corrected mistakes live in [[Lessons]] — one line per
 ## Final checklist before you start
 
 - [ ] `./setup.sh` ran, `.venv` exists, and the pre-commit hook is enabled.
-- [ ] `stratum-state` prints the current state without errors.
+- [ ] `.venv/bin/stratum-state` prints the current state without errors.
 - [ ] Plugins are enabled: Templater, Dataview, QuickAdd, Git, Linter.
 - [ ] A first note was captured into `00-Inbox` through QuickAdd.
 - [ ] `audit.py --ratchet` shows GATE CLEAR.

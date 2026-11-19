@@ -20,7 +20,7 @@ def ok(name, cond, got=""):
 
 
 def routing_body(task: str, proposed: str, approved, dtype: str = "agent_route") -> str:
-    """Contract body for a routing row; approved=None means pending the owner's approval."""
+    """Contract body for a routing row; approved=None means pending owner approval."""
     return json.dumps({"task": task, "decision_type": dtype,
                        "model_proposed": proposed, "model_approved": approved},
                       ensure_ascii=False, separators=(",", ":"))

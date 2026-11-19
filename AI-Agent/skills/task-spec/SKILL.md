@@ -40,7 +40,7 @@ When executing High blast radius work, create a task specification in `01-Projec
   ```gherkin
   Given: The vault has 190 audited files with error=0
   When: Renaming directory Claude/ to AI-Agent/
-  Then: python3 AI-Agent/scripts/audit.py --ratchet exits with error=0 and warn=0
+  Then: .venv/bin/python AI-Agent/scripts/audit.py --ratchet exits with error=0 and warn=0
   ```
 
 ### 3. 4-State Execution DAG

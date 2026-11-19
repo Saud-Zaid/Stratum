@@ -14,6 +14,7 @@ Usage: consumer_suites --check <path> [<path>...]
 Exit:  0 normally (and all suites green with --run); 1 a suite or compile failed; 2 an unknown option or the map is missing/broken (the caller must not proceed blindly).
 """
 import os
+import re
 import subprocess
 import sys
 import time
@@ -120,7 +121,7 @@ def staged_paths(root=None):
     """Added/copied/modified/renamed paths in the index, relative to the repo root (git's own spelling, / separators)."""
     root = root or vault_root()
     r = subprocess.run(["git", "-C", root, "-c", "core.quotepath=off", "diff", "--cached", "--name-only", "--diff-filter=ACMR"],
-                       capture_output=True, text=True)
+                       capture_output=True, text=True, encoding="utf-8", errors="replace")
     if r.returncode != 0:
         raise OSError("git diff --cached failed: " + (r.stderr.strip().splitlines() or ["?"])[0])
     return [x for x in r.stdout.splitlines() if x]
@@ -171,7 +172,7 @@ def run_plan(paths, cfg, root=None, python=None):
             lines.append("TIMEOUT %s (time_cap_seconds=%s exhausted)" % (name, cfg["time_cap_seconds"]))
             continue
         try:
-            r = subprocess.run([python, f], cwd=root, capture_output=True, text=True, timeout=left)
+            r = subprocess.run([python, f], cwd=root, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=left, env=dict(os.environ, GATE_LOG="off"))      # AD13 G1: a suite never writes gate-log lines
             if r.returncode == 77:   # the suite declares itself not applicable in this tree
                 lines.append("SKIP %s (exit 77: not applicable here)" % name)
                 continue
@@ -182,6 +183,20 @@ def run_plan(paths, cfg, root=None, python=None):
         bad = bad or not ok
         lines.append("%s %s %s" % ("PASS" if ok else "FAIL", name, "" if ok else tail[0][:160]))
     return (1 if bad else 0), lines
+
+
+def failed_suites(lines):
+    """(id, where, message) of every failing line of run_plan: FAIL <suite> <tail>, COMPILE FAIL <path>: <error>, MISSING and TIMEOUT."""
+    out = []
+    for ln in lines:
+        m = re.match(r"^(FAIL|MISSING|TIMEOUT) (\S+)\s*(.*)$", ln)
+        if m:
+            out.append((m.group(2), m.group(1), m.group(3)))
+            continue
+        m = re.match(r"^COMPILE FAIL (\S+): (.*)$", ln)
+        if m:
+            out.append(("compile", m.group(1), m.group(2)))
+    return out
 
 
 def main(argv=None):
@@ -219,6 +234,12 @@ def main(argv=None):
         rc, lines = run_plan(paths, cfg)
         for ln in lines:
             print(ln)
+        if staged:
+            try:      # AD13 G1: one line per run of the commit gate (mother vault only: a release does not ship gate_log)
+                import gate_log as _GL
+                _GL.record("suites", failed_suites(lines))
+            except ImportError:
+                pass
         return rc
     suites, unknown = plan(paths, cfg)
     for s in suites:

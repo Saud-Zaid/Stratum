@@ -22,6 +22,13 @@ def ok(name, cond, got=""):
     R.append((name, bool(cond), got))
 
 
+def _noexc(fn):
+    try:
+        return fn()
+    except Exception as exc:   # noqa: BLE001
+        return exc
+
+
 def vault(entries_core, entries_mother=(), files=None):
     root = Path(tempfile.mkdtemp(prefix="runtests-"))
     (root / "AI-Agent" / "config").mkdir(parents=True)
@@ -78,12 +85,26 @@ try:
     ok("T16-children-get-a-temp-net-log-so-a-test-run-does-not-write-into-the-tree", RT.run_plan(r5, RT.load_plan(r5), timeout=20)[0]["status"] == "PASS")
 
     def cli(root, *a):
-        return subprocess.run([sys.executable, str(HERE / "run_tests.py"), *a], capture_output=True, text=True, env=dict(os.environ, VAULT=str(root)), timeout=60)
+        return subprocess.run([sys.executable, str(HERE / "run_tests.py"), *a], capture_output=True, text=True, encoding="utf-8", errors="replace", env=dict(os.environ, VAULT=str(root)), timeout=60)
     good = vault([("t/a-tests.py", "direct", "parallel")], files={"t/a-tests.py": _PASS}); tmp.append(good)
     c1, c2, c3 = cli(good), cli(r1), cli(good, "--list")
     ok("T12-cli-exit-0-when-all-pass-and-1-when-one-fails", c1.returncode == 0 and "RUN-TESTS 1/1 passed" in c1.stdout and c2.returncode == 1 and "RUN-TESTS 2/3" in c2.stdout, (c1.stdout[-80:], c2.stdout[-80:]))
     ok("T13-list-prints-the-plan-without-running", c3.returncode == 0 and "RUN-TESTS plan 1" in c3.stdout)
     ok("T14-help-rc0-unknown-flag-rc2", cli(good, "--help").returncode == 0 and cli(good, "--bogus").returncode == 2)
+
+    # Fable review: the real classification lists most mother-only tests as bare paths (`- AI-Agent/scripts/x-tests.py`),
+    # a shape no fixture above used; `--set all` died on them with a TypeError before running anything
+    r6 = vault([("t/a-tests.py", "direct", "parallel")], files={"t/a-tests.py": _PASS, "t/bare-tests.py": _PASS}); tmp.append(r6)
+    with (r6 / RT.CLASSIFICATION).open("a", encoding="utf-8") as fh:
+        fh.write("  - t/bare-tests.py\n  - path: t/dict-tests.py\n    runner: direct\n    lane: parallel\n")
+    try:
+        plan6 = RT.load_plan(r6, "all")
+    except Exception as exc:   # noqa: BLE001
+        plan6 = exc
+    ok("T17-a-bare-path-entry-is-a-direct-serial-test", isinstance(plan6, list) and {"path": "t/bare-tests.py", "runner": "direct", "lane": "serial", "set": "mother_vault_drop"} in plan6, repr(plan6))
+    c6 = cli(r6, "--set", "all")
+    ok("T18-cli-set-all-runs-bare-entries", c6.returncode == 0 and "PASS    t/bare-tests.py" in c6.stdout and "RUN-TESTS 2/2 passed (1 skipped)" in c6.stdout, (c6.stdout[-200:], c6.stderr[-200:]))
+    ok("T19-the-real-classification-loads-for-every-set", isinstance(_noexc(lambda: RT.load_plan(RT.VAULT, "all")), list), repr(_noexc(lambda: RT.load_plan(RT.VAULT, "all")))[:200])
 finally:
     for t in tmp:
         shutil.rmtree(t, ignore_errors=True)

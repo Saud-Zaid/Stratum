@@ -112,7 +112,7 @@ def f2_state():
         import subprocess
         out = subprocess.run(
             [sys.executable, str(F2_SCRIPT), "check"],
-            capture_output=True, text=True, timeout=10)
+            capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=10)
         line = out.stdout.strip()
         if "STALE" in line:
             return "F2:STALE"
@@ -128,7 +128,7 @@ def print_tax(used_tokens=None, limits_path=None, telemetry_path=None):
     small_tax = 0
     if GOOSE_DB.exists():
         try:
-            db = sqlite3.connect(f"file:{GOOSE_DB}?mode=ro", uri=True)
+            db = sqlite3.connect(Path(GOOSE_DB).resolve().as_uri() + "?mode=ro", uri=True)
             row = db.execute(
                 "SELECT COALESCE(AVG(ul.input_tokens),0), COUNT(*) FROM usage_ledger ul "
                 "JOIN sessions s ON s.id=ul.session_id "

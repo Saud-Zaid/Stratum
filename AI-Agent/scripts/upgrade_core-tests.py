@@ -261,7 +261,7 @@ try:
 
     # ---- CLI
     def cli(mod, *a, root=None):
-        return subprocess.run([sys.executable, str(HERE / mod), *a], capture_output=True, text=True, env=dict(os.environ, VAULT=str(root or tmp())), timeout=60)
+        return subprocess.run([sys.executable, str(HERE / mod), *a], capture_output=True, text=True, encoding="utf-8", errors="replace", env=dict(os.environ, VAULT=str(root or tmp())), timeout=60)
     ok("X01-help-rc0-unknown-flag-rc2-for-both-tools", all(cli(m, "--help").returncode == 0 and cli(m, "--bogus").returncode == 2 for m in ("upgrade_core.py", "restore_pre_upgrade.py")))
     rr = tmp()
     c = cli("upgrade_core.py", "--from", s100.label, "--yes", "--no-sync", "--skip-verify", root=rr)
@@ -289,9 +289,64 @@ try:
        and json.loads(read(rb, U.INSTALLED))["version"] == "1.0.0", (rc1, rc2))
     rc3, out3 = up(rb, sb1)
     ok("V04-an-older-beta-does-not-downgrade-a-final-release", read(rb, "core.txt") == "final\n", out3[-150:])
+
+    # ---- Step 1: executable bit preservation & restore + transient PermissionError retry
+    rx = tmp()
+    sx1, _ = release("1.0.0", {"setup.sh": ("#!/bin/sh\necho v1\n", "replace"), ".githooks/pre-commit": ("#!/bin/sh\n# v1\nexit 0\n", "replace"), "plain.txt": ("a\n", "replace")})
+    up(rx, sx1)
+    sx2, _ = release("1.1.0", {"setup.sh": ("#!/bin/sh\necho v2\n", "replace"), ".githooks/pre-commit": ("#!/bin/sh\n# v2\nexit 0\n", "replace"), "plain.txt": ("b\n", "replace")})
+    up(rx, sx2)
+    if os.name != "nt":
+        import stat as _st
+        _sh_mode = _st.S_IMODE((rx / "setup.sh").stat().st_mode)
+        _hk_mode = _st.S_IMODE((rx / ".githooks/pre-commit").stat().st_mode)
+        _pl_mode = _st.S_IMODE((rx / "plain.txt").stat().st_mode)
+        (rx / ".githooks/pre-commit").chmod(0o600)
+        RP.restore(rx, RP.backups(rx)[-1], out=lambda *_: None)
+        _hk_restored = _st.S_IMODE((rx / ".githooks/pre-commit").stat().st_mode)
+        ok("E01-executable-bits-preserved-across-upgrade-and-restore",
+           bool(_sh_mode & 0o100) and bool(_hk_mode & 0o100) and not (_pl_mode & 0o100) and bool(_hk_restored & 0o100),
+           (oct(_sh_mode), oct(_hk_mode), oct(_pl_mode), oct(_hk_restored)))
+    _orig_rep, _tries = os.replace, [0]
+    def _flaky_rep_uc(a, b):
+        _tries[0] += 1
+        if _tries[0] < 3:
+            raise PermissionError("busy")
+        return _orig_rep(a, b)
+    try:
+        os.replace = _flaky_rep_uc
+        U.write_atomic(rx / "retry.txt", b"ok\n", retries=4, sleeper=lambda _: None)
+    finally:
+        os.replace = _orig_rep
+    ok("E02-write-atomic-retries-permission-error-and-cleans-temp",
+       _tries[0] == 3 and (rx / "retry.txt").read_bytes() == b"ok\n" and not list(rx.glob(".upgrade-*")),
+       (_tries[0], list(rx.glob(".upgrade-*"))))
 finally:
     for d in tmps:
         shutil.rmtree(d, ignore_errors=True)
+
+# Step 4: a git-clone install has no installed.json; read_installed falls back to release_manifest.json
+_fr = tmp()
+ok("S4a-no-installed-and-no-manifest-is-None", U.read_installed(_fr) is None)
+(_fr / "release_manifest.json").write_text(json.dumps({"version": "1.0.0-beta.1", "files": {
+    "a.md": {"sha256": "aa", "policy": "replace"}, "k.md": {"sha256": "kk", "policy": "keep"}}}), encoding="utf-8")
+_got = U.read_installed(_fr)
+ok("S4b-manifest-fallback-reports-version-source-and-skips-keep-files",
+   _got == {"version": "1.0.0-beta.1", "files": {"a.md": "aa"}, "source": "release_manifest"}, _got)
+(_fr / "release_manifest.json").write_text("{not json", encoding="utf-8")
+ok("S4c-a-broken-manifest-is-None-not-a-crash", U.read_installed(_fr) is None)
+
+# Step 4 end to end: a git-clone tree (release_manifest.json, no installed.json) upgrades like a tracked install
+_old_src, _old_dir = release("1.0.0-beta.1", {"a.md": ("one\n", "replace"), "b.md": ("b\n", "replace")})
+_clone = tmp()
+for _f in ("a.md", "b.md", "release_manifest.json"):
+    shutil.copy(_old_dir / _f, _clone / _f)
+(_clone / "b.md").write_text("b edited by the owner\n", encoding="utf-8", newline="")   # a local edit must be kept, not overwritten
+_new_src, _ = release("1.0.0-beta.2", {"a.md": ("two\n", "replace"), "b.md": ("b2\n", "replace")})
+_rc, _o = up(_clone, _new_src)
+ok("S4d-clone-without-installed-json-upgrades-and-reports-the-owner-edit-as-a-conflict-rc1", _rc == 1 and "CONFLICT b.md" in _o and read(_clone, "a.md") == "two\n" and
+   json.loads((_clone / U.INSTALLED).read_text(encoding="utf-8"))["version"] == "1.0.0-beta.2", (_rc, _o[-300:]))
+ok("S4e-and-keeps-the-owner-edit-as-a-conflict-not-an-overwrite", read(_clone, "b.md") == "b edited by the owner\n", read(_clone, "b.md"))
 
 failed = [r for r in R if not r[1]]
 for name, passed, got in R:

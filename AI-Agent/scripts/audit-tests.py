@@ -274,7 +274,7 @@ def _tmp_vault(profile_text, notes):
 
 def _run_audit(root, *args):
     env = dict(_os.environ, VAULT=str(root))
-    r = _sp.run([_sys.executable, str(_P(_A.__file__)), "--no-cache", *args], capture_output=True, text=True, env=env, timeout=120)
+    r = _sp.run([_sys.executable, str(_P(_A.__file__)), "--no-cache", *args], capture_output=True, text=True, encoding="utf-8", errors="replace", env=env, timeout=120)
     return r.stdout + r.stderr
 
 
@@ -298,7 +298,7 @@ try:
     ok("T-02b: release-overlay notes are skipped", "release-overlay" not in out3 and "R1-dup" not in out3, out3[-300:])
     _probe = _sp.run([_sys.executable, "-c",
                       "import sys; sys.path.insert(0, %r); import audit; print(sorted(m for m in ('arch_rules', 'club_rules') if m in sys.modules))" % str(_P(_A.__file__).parent)],
-                     capture_output=True, text=True, env=dict(_os.environ, VAULT=str(_REAL)))
+                     capture_output=True, text=True, encoding="utf-8", errors="replace", env=dict(_os.environ, VAULT=str(_REAL)))
     ok("T-02b: arch_rules/club_rules not imported at module load", _probe.stdout.strip() == "[]", _probe.stdout + _probe.stderr)
 finally:
     for _r in _roots:
@@ -327,7 +327,8 @@ finally:
 
 # T-02d: owner and people folder come from the profile
 aok("T-02d: owner recognised by Arabic name", _A.is_vault_owner(_U(r"\u0633\u0639\u0648\u062f \u0627\u0644\u062d\u0645\u0627\u062f\u064a")))
-aok("T-02d: owner recognised by Latin alias, any case", _A.is_vault_owner("owner example") and _A.is_vault_owner("OWNER EXAMPLE (lead)"))
+_latin = [x for x in _A.load_profile(_A.VAULT)["owner"]["aliases"] if x.isascii()]
+aok("T-02d: owner recognised by Latin alias, any case", bool(_latin) and all(_A.is_vault_owner(x.lower()) and _A.is_vault_owner(x.upper() + " (lead)") for x in _latin))
 ok("T-02d: a stranger is not the owner", not _A.is_vault_owner(_U(r"[[\u0644\u064a\u0644\u0649-\u0627\u0644\u063a\u0627\u0645\u062f\u064a]]")) and not _A.is_vault_owner("Layla"))
 ok("T-02d: people_dir default", _A.people_dir() == _A.locale_value("PEOPLE_DIR", "02-Areas/People"), _A.people_dir())
 _rv = _tmp_vault(_PROF.replace("name: X\n  aliases: []", "name: Rhea Stone\n  aliases: [R. Stone]") % "[]"
@@ -348,6 +349,10 @@ finally:
     _shutil.rmtree(_rv, ignore_errors=True)
 
 # genesis repo: no HEAD yet -> gatehash must not fail-closed on the committed-ledger comparison
+# A git hook runs with GIT_DIR / GIT_INDEX_FILE (and friends) set; a child git in a temp repo must not inherit them
+# (it failed under the pre-commit hook of a linked worktree). Scrub them for the rest of this run.
+from _vaultlib import scrub_git_env as _scrub_git_env
+_scrub_git_env()
 _g = _P(_tf.mkdtemp(prefix="audit-genesis-"))
 try:
     _sp.run(["git", "-C", str(_g), "init", "-q"], check=True)
@@ -411,16 +416,274 @@ _sv = _tmp_vault(_PROF % "[]", {"03-Resources/r.md": _NOTE, "03-Resources/b.md":
 _sr = _tmp_vault(_PROF.replace("mode: vault", "mode: release") % "[]", {"03-Resources/r.md": _NOTE, "03-Resources/b.md": _BIDI})
 try:
     _ov = _run_audit(_sv, "--check", "secrets", "--min", "info")
-    ok("T-05: vault mode does not scan a research note for credential shapes or entropy", "03-Resources/r.md" not in _ov, _ov[-400:])
+    # AD13 D7 changed this policy (decided at Gate 2): a credential shape is an error in every note, entropy stays narrow
+    ok("T-05: vault mode flags a credential shape in a research note (AD13 D7) but not entropy",
+       "SECRET-leak-2\t03-Resources/r.md" in _ov.replace(" ", "\t") or ("SECRET-leak-2" in _ov and "03-Resources/r.md" in _ov), _ov[-400:])
+    ok("T-05: vault mode does not report entropy for a research note", "SECRET-entropy" not in _ov, _ov[-400:])
     ok("T-05: vault mode still scans an instruction-path file", "SECRET-leak-2" in _ov and "handoff.md" in _ov, _ov[-400:])
     ok("T-05: hidden bidirectional text is an error in any mode", "BIDI-control" in _ov and "03-Resources/b.md" in _ov, _ov[-400:])
     _orr = _run_audit(_sr, "--check", "secrets", "--min", "info")
     ok("T-05: release mode scans every note: credential shape and entropy are errors", "SECRET-leak-2" in _orr and "SECRET-entropy" in _orr and "03-Resources/r.md" in _orr, _orr[-400:])
     ok("T-05: release mode also reports the bidi note", "BIDI-control" in _orr, _orr[-300:])
-    ok("T-05: a leak blocks the gate (exit 1 under --ratchet)", _sp.run([_sys.executable, str(_P(_A.__file__)), "--no-cache", "--ratchet", "--check", "secrets"], capture_output=True, text=True, env=dict(_os.environ, VAULT=str(_sr)), timeout=120).returncode == 1)
+    ok("T-05: a leak blocks the gate (exit 1 under --ratchet)", _sp.run([_sys.executable, str(_P(_A.__file__)), "--no-cache", "--ratchet", "--check", "secrets"], capture_output=True, text=True, encoding="utf-8", errors="replace", env=dict(_os.environ, VAULT=str(_sr)), timeout=120).returncode == 1)
+    # AD13 D7: placeholder-aware wide scope, non-note files, people-folder warnings
+    _fk = "sk" + "_live" + "_" + "A1b2C3d4E5f6G7h8I9j0K1l2"
+    _ph = "sk" + "_live" + "_" + "x" * 24
+    _hdr = "---\ntags: [x]\ncreated: 2026-11-01\narea: '[[n]]'\n---\n# T\n\n"
+    _PEOPLE = _A.locale_value("PEOPLE_DIR", "02-Areas/People") + "/p.md"   # the folder of this tree: Arabic in the mother, English in a release
+    _iban = "SA" + "03" + "8000" + "0000" + "6080" + "1016" + "7519"
+    _d7 = _tmp_vault(_PROF % "[]", {"03-Resources/live.md": _hdr + "key " + _fk + "\n", "03-Resources/doc.md": _hdr + "key " + _ph + "\n",
+                                    "AI-Agent/cfg.json": '{"k": "' + _fk + '"}\n', "AI-Agent/state/run.json": '{"k": "' + _fk + '"}\n',
+                                    "AI-Agent/scripts/ok.py": 'KEY = "' + _ph + '"\n', "AI-Agent/big.json": '{"k": "' + _fk + '"}' + " " * 1_100_000,
+                                    _PEOPLE: _hdr + "iban " + _iban + "\nmobile 0512345678\nid number 1234567890\n",
+                                    "03-Resources/notpeople.md": _hdr + "iban " + _iban + "\n"})
+    try:
+        _o7 = _run_audit(_d7, "--check", "secrets", "--min", "info")
+        _leaks = [l for l in _o7.splitlines() if "SECRET-leak" in l]
+        ok("T-d7a: a credential shape in a note is an error, a placeholder in a note is not",
+           any("03-Resources/live.md" in l for l in _leaks) and not any("doc.md" in l for l in _leaks), _o7[-500:])
+        ok("T-d7b: a credential shape in a config file is an error; run data, a placeholder in a script and a file over 1 MB are not",
+           any("AI-Agent/cfg.json" in l for l in _leaks) and not any(x in l for l in _leaks for x in ("state/run.json", "scripts/ok.py", "big.json")), _o7[-500:])
+        ok("T-d7c: the finding never prints the value", _fk[:20] not in _o7, _o7[-300:])
+        ok("T-d7d: the people folder warns about IBAN, mobile and a named identity number",
+           all(any(k in l and "\twarn\t" in l.replace(" ", "\t") or (k in l and "warn" in l) for l in _o7.splitlines()) for k in ("PII-iban", "PII-mobile", "PII-national-id")), _o7[-600:])
+        ok("T-d7e: personal-data shapes outside the people folder are not reported", "notpeople.md" not in "\n".join(l for l in _o7.splitlines() if "PII" in l), _o7[-400:])
+        # a git repository: an ignored local file is never scanned, a tracked one is
+        import subprocess as _sp2
+        _g = _tmp_vault(_PROF % "[]", {"cfg.json": '{"k": "' + _fk + '"}\n', "local.json": '{"k": "' + _fk + '"}\n', ".gitignore": "local.json\n"})
+        try:
+            _sp2.run(["git", "init", "-q"], cwd=_g, check=True)
+            _og = _run_audit(_g, "--check", "secrets", "--min", "info")
+            ok("T-d7f: with a repository, an ignored file is skipped and an unignored one is scanned", "cfg.json" in _og and "local.json" not in _og, _og[-400:])
+        finally:
+            _shutil.rmtree(_g, ignore_errors=True)
+        _only_pii = _tmp_vault(_PROF % "[]", {_PEOPLE: _hdr + "iban " + _iban + "\n"})
+        try:
+            ok("T-d7g: a personal-data warning does not block the gate", _sp.run([_sys.executable, str(_P(_A.__file__)), "--no-cache", "--ratchet", "--check", "secrets"], capture_output=True, text=True, encoding="utf-8", errors="replace", env=dict(_os.environ, VAULT=str(_only_pii)), timeout=120).returncode == 0)
+        finally:
+            _shutil.rmtree(_only_pii, ignore_errors=True)
+        # D7 retrofit: shapes adapted from gitleaks reach notes and non-note files, with exclusions
+        _npm = "npm" + "_" + "A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q7r8"
+        _ghp2 = "gh" + "p_" + "A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q7r8"
+        _fill = "filler " * 30000
+        _d7b = _tmp_vault(_PROF % "[]", {"03-Resources/npm.md": _hdr + "token " + _npm + "\n", "AI-Agent/schema/secret-shapes.json": '{"x": "' + _npm + '"}\n',
+                                         ".obsidian/plugins/x/main.js": 'var t = "' + _npm + '";\n', "AI-Agent/cfg.js": 'var t = "' + _npm + '";\n',
+                                         "AI-Agent/bignpm.js": 'var t = "' + _npm + '";\n' + _fill, "AI-Agent/bigghp.js": 'var t = "' + _ghp2 + '";\n' + _fill})
+        try:
+            _ob = [l for l in _run_audit(_d7b, "--check", "secrets", "--min", "info").splitlines() if "SECRET-leak" in l]
+            ok("T-d7h: an adapted shape in a note is an error named by its gitleaks rule", any("SECRET-leak-gl-npm-access-token" in l and "npm.md" in l for l in _ob), _ob)
+            ok("T-d7i: an adapted shape in a script is an error", any("AI-Agent/cfg.js" in l for l in _ob), _ob)
+            ok("T-d7j: the shapes file and third-party plugin code are not scanned", not any(x in l for l in _ob for x in ("secret-shapes.json", ".obsidian")), _ob)
+            ok("T-d7k: over the size cap only the built-in shapes run", any("bigghp.js" in l and "SECRET-leak-2" in l for l in _ob) and not any("bignpm.js" in l for l in _ob), _ob)
+        finally:
+            _shutil.rmtree(_d7b, ignore_errors=True)
+        # E7 prior-art retrofit: string-literal dynamic imports are judged by the ADR-006 policy too
+        _dv = _tmp_vault(_PROF % "[]", {"AI-Agent/scripts/dyn_bad.py": "import importlib\nm = importlib.import_module('requests')\n",
+                                        "AI-Agent/scripts/dyn_ok.py": "import importlib\nm = importlib.import_module('json')\nn = __import__('os')\n",
+                                        "AI-Agent/scripts/dyn_computed.py": "import importlib\nname = 'req' + 'uests'\nm = importlib.import_module(name)\n",
+                                        "AI-Agent/scripts/dyn_static.py": "import requests\n"})
+        try:
+            _ov2 = [l for l in _run_audit(_dv, "--check", "adr", "--min", "info").splitlines() if "ADR-006-imports" in l]
+            ok("T-e7a: a string-literal dynamic import of an unapproved module is an ADR-006 error", any("dyn_bad.py" in l and "requests" in l for l in _ov2), _ov2)
+            ok("T-e7b: allowed or computed dynamic imports are not findings", not any(x in l for l in _ov2 for x in ("dyn_ok.py", "dyn_computed.py")), _ov2)
+            ok("T-e7c: the static import is still found", any("dyn_static.py" in l for l in _ov2), _ov2)
+            # a cache row written before the dynamic-import rule (a plain sha1, module set without `requests`) must not hide the finding
+            import sqlite3 as _sq
+            def _cached(*a):
+                r = _sp.run([_sys.executable, str(_P(_A.__file__)), *a], capture_output=True, text=True, encoding="utf-8", errors="replace", env=dict(_os.environ, VAULT=str(_dv)), timeout=120)
+                return r.stdout + r.stderr
+            _cached("--check", "adr", "--min", "info")
+            _dbp = _dv / "AI-Agent" / "state" / "vault-index.sqlite3"
+            _stale_done = False
+            if _dbp.exists():
+                _c = _sq.connect(str(_dbp))
+                try:
+                    rows = _c.execute("SELECT path, sha1 FROM adr_py_cache").fetchall()
+                    for p_, s_ in rows:
+                        _c.execute("UPDATE adr_py_cache SET sha1 = ?, mods_json = ? WHERE path = ?", (s_.replace("+dyn", ""), '["importlib"]', p_))
+                    _c.commit()
+                    _stale_done = bool(rows)
+                finally:
+                    _c.close()
+            _again = [l for l in _cached("--check", "adr", "--min", "info").splitlines() if "ADR-006-imports" in l]
+            ok("T-e7d: a cache row from before the rule does not hide a dynamic import", _stale_done and any("dyn_bad.py" in l and "requests" in l for l in _again), (_stale_done, _again))
+        finally:
+            _shutil.rmtree(_dv, ignore_errors=True)
+    finally:
+        _shutil.rmtree(_d7, ignore_errors=True)
 finally:
     _shutil.rmtree(_sv, ignore_errors=True)
     _shutil.rmtree(_sr, ignore_errors=True)
+
+# --- AD13 E1: R19 (wikilink to a missing file) and R20 (backtick path that does not exist) ---
+def finds(path, text, rule):
+    ctx = audit.Ctx({"T.md": TARGET, path: text}, {"T.md": parse(TARGET), path: parse(text)})
+    return [f for f in audit.findings_for(path, text, {"links"}, 4000, ctx) if f[1] == rule]
+
+
+NOPE = "zzNoSuchNoteQ9"
+ok("R19: a link to a missing note is flagged (warn)", [f[0] for f in finds("A.md", f"x [[{NOPE}]]\n", "R19-missing-note")] == ["warn"])
+ok("R19: an existing note is not flagged", finds("A.md", "x [[T]]\n", "R19-missing-note") == [])
+ok("R19: alias text does not matter, the target does", finds("A.md", "x [[T|label]]\n", "R19-missing-note") == []
+   and len(finds("A.md", f"x [[{NOPE}|label]]\n", "R19-missing-note")) == 1)
+ok("R19: fragment and block links check the note", finds("A.md", "x [[T#real]] [[T#^b1]]\n", "R19-missing-note") == []
+   and len(finds("A.md", f"x [[{NOPE}#h]]\n", "R19-missing-note")) == 1)
+ok("R19: a path form resolves by its file name, case-insensitively", finds("A.md", "x [[some/dir/t]] [[T.md]]\n", "R19-missing-note") == [])
+ok("R19: an escaped pipe inside a table cell still names the note", len(finds("A.md", f"| a |\n|---|\n| [[{NOPE}\\|x]] |\n", "R19-missing-note")) == 1)
+ok("R19: placeholders and empty targets are not flagged", finds("A.md", "x [[<% tp.file.title %>]] [[...]] [[{{name}}]]\n", "R19-missing-note") == [])
+ok("R19: code spans and fenced code are not flagged", finds("A.md", f"`[[{NOPE}]]`\n\n```\n[[{NOPE}]]\n```\n", "R19-missing-note") == [])
+ok("R19: templates, fixtures and raw research are skipped", all(finds(pth, f"x [[{NOPE}]]\n", "R19-missing-note") == []
+   for pth in ("Templates/x.md", "AI-Agent/fixtures/x.md", "AI-Agent/handoff/research/x.md", "card-template/x.md")))
+ok("R19: the archive is info, not warn", [f[0] for f in finds("04-Archive/x.md", f"x [[{NOPE}]]\n", "R19-missing-note")] == ["info"])
+ok("R19: a missing image embed is flagged, the line number is right", [f[3] for f in finds("A.md", f"a\n\n![[{NOPE}.png]]\n", "R19-missing-note")] == [3])
+aok("R19: the vault owner is never a missing note", finds("A.md", "x [[" + audit._profile_cached()["owner"]["name"] + "]]\n", "R19-missing-note") == [])
+GONE = "01-Projects/zzNoSuchFolderQ9/gone.md"
+ok("R20: a missing backtick path is flagged (info)", [f[0] for f in finds("A.md", f"see `{GONE}`\n", "R20-missing-path")] == ["info"])
+ok("R20: an existing path, with a line suffix or a closing period, is not flagged",
+   finds("A.md", "see `AI-Agent/handoff.md:16` and `AI-Agent/handoff.md`.\n", "R20-missing-path") == [])
+ok("R20: a marker word on the line exempts it", finds("A.md", f"planned: `{GONE}`\n", "R20-missing-path") == []
+   and finds("A.md", f"`{GONE}` (renamed)\n", "R20-missing-path") == [])
+ok("R20: fenced code, placeholders, ellipsis and generated folders are not flagged",
+   finds("A.md", f"```\n`{GONE}`\n```\n`01-Projects/<name>/x.md` `01-Projects/a/*.md` `01-Projects/long\u2026` `AI-Agent/state/zz.json`\n", "R20-missing-path") == [])
+ok("R20: archive and skill files are skipped", all(finds(pth, f"see `{GONE}`\n", "R20-missing-path") == [] for pth in ("04-Archive/x.md", "AI-Agent/skills/x/SKILL.md")))
+ok("R20: only vault-folder paths count (a URL or a bare file name does not)", finds("A.md", "`https://x.org/a/b.md` `notes.md` `zzother/app.py`\n", "R20-missing-path") == [])
+ok("R20: negative control, the same line without a marker fires", len(finds("A.md", f"see `{GONE}`\n", "R20-missing-path")) == 1)
+
+# --- Fable review: a task line with an impossible due date must not crash the gate ---
+_rd = _tmp_vault(_PROF % "[]", {"n.md": "# T\n\n- [ ] typo \U0001F4C5 2026-02-30\n- [ ] real \U0001F4C5 2020-01-01\n"})
+try:
+    _od = _run_audit(_rd, "--check", "due", "--min", "info")
+    ok("due: an impossible date on a task line does not crash the audit", "Traceback" not in _od and "AUDIT " in _od, _od[-400:])
+    ok("due: the impossible date is reported on its line (warn, never blocks)", "warn\tDUE-invalid\tn.md:3" in _od, _od[-400:])
+    ok("due: control, the valid overdue line next to it is still reported", "DUE-now\tn.md:4" in _od, _od[-400:])
+finally:
+    _shutil.rmtree(_rd, ignore_errors=True)
+
+# --- Fable review: --new-since must see changed notes whose names are not ASCII (git quotes such paths by default) ---
+_AR1, _AR2 = _U(r"\u0645\u0644\u0627\u062d\u0638\u0629.md"), _U(r"\u062c\u062f\u064a\u062f\u0629.md")
+_rg = _tmp_vault(_PROF % "[]", {_AR1: "# T\n\n## a\n", "ascii.md": "# T\n\n## a\n"})
+try:
+    _gitc = ["git", "-C", str(_rg), "-c", "user.name=t", "-c", "user.email=t@t"]
+    _sp.run(_gitc + ["init", "-q"], check=True)
+    _sp.run(_gitc + ["add", "-A"], check=True)
+    _sp.run(_gitc + ["commit", "-q", "-m", "base"], check=True)
+    (_rg / _AR1).write_text(_DUP, encoding="utf-8")        # tracked, modified
+    (_rg / "ascii.md").write_text(_DUP, encoding="utf-8")  # control: an ASCII name was always seen
+    (_rg / _AR2).write_text(_DUP, encoding="utf-8")        # untracked
+    _og = _run_audit(_rg, "--new-since", "HEAD", "--check", "headings", "--min", "info")
+    ok("new-since: control, a changed ASCII-named note is audited", "R1-dup\tascii.md" in _og, _og[-500:])
+    ok("new-since: a changed non-ASCII-named note is audited", "R1-dup\t" + _AR1 in _og, _og[-500:])
+    ok("new-since: an untracked non-ASCII-named note is audited", "R1-dup\t" + _AR2 in _og, _og[-500:])
+finally:
+    _shutil.rmtree(_rg, ignore_errors=True)
+
+# --- Fable review: `created` must be a date; only a str was refused, so an empty value or a number passed the gate ---
+_fmn = lambda v: "---\ntags:\n  - x\ncreated: %s\n---\n# T\n" % v
+_rc = _tmp_vault(_PROF % "[]", {"01-Projects/empty.md": _fmn(""), "01-Projects/num.md": _fmn("20261116"), "01-Projects/stamp.md": _fmn("2026-11-16 10:30:00"),
+                               "01-Projects/quoted.md": _fmn('"2026-11-16"'), "01-Projects/good.md": _fmn("2026-11-16"), "Templates/t.md": _fmn('"<% tp.date.now() %>"')})
+try:
+    _oc = _run_audit(_rc, "--check", "schema", "--min", "info", "--limit", "200")
+    _hit = lambda n: ("FM-created-type\t" + n + ":") in _oc
+    ok("created: control, a quoted date (str) is refused as before", _hit("01-Projects/quoted.md"), _oc[-500:])
+    ok("created: an empty value is refused", _hit("01-Projects/empty.md"), _oc[-500:])
+    ok("created: a number is refused", _hit("01-Projects/num.md"), _oc[-500:])
+    ok("created: a timestamp is refused (ADR-010: a raw date, never a timestamp)", _hit("01-Projects/stamp.md"), _oc[-500:])
+    ok("created: a raw ISO date passes and a template placeholder stays exempt", not _hit("01-Projects/good.md") and not _hit("Templates/t.md") and "Traceback" not in _oc, _oc[-500:])
+finally:
+    _shutil.rmtree(_rc, ignore_errors=True)
+
+# --- Step 5: FM-nonlatin-digit covers the date keys FM-created-type does not ---
+_fmd = lambda k, v: "---\ntags:\n  - x\ncreated: 2026-11-16\n%s: %s\n---\n# T\n" % (k, v)
+_rd = _tmp_vault(_PROF % "[]", {"01-Projects/ar-due.md": _fmd("due", _U(r"\u0662\u0660\u0662\u0666-\u0661\u0661-\u0662\u0660")), "01-Projects/fa-reviewed.md": _fmd("last_reviewed", _U(r"\u06f2\u06f0\u06f2\u06f6-\u06f1\u06f1-\u06f2\u06f0")),
+                               "01-Projects/ok-due.md": _fmd("due", "2026-11-20"), "01-Projects/title-digits.md": _U(r"---\ntags:\n  - x\ncreated: 2026-11-16\ntitle: \u0662\u0660\u0662\u0666\n---\n# T\n")})
+try:
+    _od = _run_audit(_rd, "--check", "schema", "--min", "info", "--limit", "200")
+    _hd = lambda n: ("FM-nonlatin-digit\t" + n + ":") in _od
+    ok("nonlatin-digit: an Arabic-Indic due date is flagged", _hd("01-Projects/ar-due.md"), _od[-500:])
+    ok("nonlatin-digit: an Extended Arabic-Indic last_reviewed is flagged", _hd("01-Projects/fa-reviewed.md"), _od[-500:])
+    ok("nonlatin-digit: an ASCII date and a non-date key with digits are not", not _hd("01-Projects/ok-due.md") and not _hd("01-Projects/title-digits.md") and "Traceback" not in _od, _od[-500:])
+finally:
+    _shutil.rmtree(_rd, ignore_errors=True)
+
+# --- AD13 E1 prior-art retrofit: R21 inline Markdown links (MkDocs validation classes not_found, absolute_links, unrecognized_links) ---
+NOF = "zzNoSuchFileQ9.md"
+ok("R21: a relative link to a missing file is flagged (warn)", [f[0] for f in finds("A.md", f"x [t]({NOF}) y\n", "R21-missing-link")] == ["warn"])
+ok("R21: an existing target passes with a fragment, a query and percent escapes",
+   finds("A.md", "[t](AI-Agent/handoff.md#x) [u](AI-Agent/handoff.md?a=1) [v](AI-Agent/schema/consumer%2Dmap.yaml)\n", "R21-missing-link") == [])
+ok("R21: a missing image is flagged", len(finds("A.md", "![i](zzNoPicQ9.png)\n", "R21-missing-link")) == 1)
+ok("R21: external links, mail links and anchors are not checked",
+   finds("A.md", "[a](https://example.com/zz) [b](mailto:x@y.z) [c](#section) [d](tel:123)\n", "R21-missing-link") == [])
+ok("R21: fenced code and inline code are ignored", finds("A.md", f"```\n[t]({NOF})\n```\n\nand `[t]({NOF})` here\n", "R21-missing-link") == [])
+ok("R21: the angle-bracket destination form is read and checked", len(finds("A.md", "[t](<zz No Such Q9.md>)\n", "R21-missing-link")) == 1)
+ok("R21: a target without an extension resolves as a note name", finds("A.md", "[t](T)\n", "R21-missing-link") == [] and len(finds("A.md", "[t](zzNoStemQ9)\n", "R21-missing-link")) == 1)
+ok("R21: a wikilink is not an inline link", finds("A.md", "[[T]] [[zzNoSuchNoteQ9]]\n", "R21-missing-link") == [])
+ok("R21: the archive reports at info, a skipped folder reports nothing",
+   [f[0] for f in finds("04-Archive/A.md", f"[t]({NOF})\n", "R21-missing-link")] == ["info"] and finds("Templates/A.md", f"[t]({NOF})\n", "R21-missing-link") == [])
+ok("R21: a file URL and an absolute path are absolute links (warn)",
+   [f[0] for f in finds("A.md", "[a](file:///home/alice/x/y.md)\n", "R21-absolute-link")] == ["warn"] and len(finds("A.md", "[b](/home/alice/x/y.md)\n", "R21-absolute-link")) == 1
+   and len(finds("A.md", "[c](C:/Users/x/y.md)\n", "R21-absolute-link")) == 1)
+ok("R21: a destination with an unencoded space or parenthesis is a malformed link",
+   len(finds("A.md", "[a](file:///home/alice/My Vault (Work) (Copy)/x.md)\n", "R21-malformed-link")) == 1 and finds("A.md", "[a](file:///home/alice/My Vault (Work) (Copy)/x.md)\n", "R21-absolute-link") == [])
+many = "\n\n".join(f"[l{i}](file:///home/alice/My Vault (Work) (Copy)/n{i}.md)" for i in range(5)) + "\n"
+got21 = finds("A.md", many, "R21-malformed-link")
+ok("R21: repeated bad links in one note give one finding with their count", len(got21) == 1 and "5 such links" in got21[0][-1], got21)
+ok("R21: an encoded file URL is absolute, not malformed", len(finds("A.md", "[a](file:///home/alice/My%20Vault%20%28Work%29/x.md)\n", "R21-absolute-link")) == 1
+   and finds("A.md", "[a](file:///home/alice/My%20Vault%20%28Work%29/x.md)\n", "R21-malformed-link") == [])
+ok("R21: a path written with ./ resolves like any relative path", finds("A.md", "[a](./AI-Agent/handoff.md) [b](./AI-Agent/schema/consumer%2Dmap.yaml#L3)\n", "R21-missing-link") == []
+   and len(finds("A.md", "[a](./zzNoSuchFileQ9.md)\n", "R21-missing-link")) == 1)
+ok("R21: a relative link written with an ordinary slash path is never absolute", finds("A.md", "[a](AI-Agent/handoff.md) [b](../AI-Agent/handoff.md)\n", "R21-absolute-link") == [])
+
+# --- secrets scan cache (AD13 perf, 2026-11-19): findings cached by the text's sha1; a cached run equals a no-cache run ---
+import re as _re_c
+import sqlite3 as _sq3
+_fk2 = "sk" + "_live" + "_" + "A1b2C3d4E5f6G7h8I9j0K1l2"
+_hd = "---\ntags: [x]\ncreated: 2026-11-01\narea: '[[n]]'\n---\n# T\n\n"
+_cv = _tmp_vault(_PROF % "[]", {"03-Resources/leak.md": _hd + "key " + _fk2 + "\n", "03-Resources/clean.md": _hd + "nothing here\n"})
+
+
+def _run_cached(root, *args):
+    env = dict(_os.environ, VAULT=str(root))
+    r = _sp.run([_sys.executable, str(_P(_A.__file__)), "--ratchet", "--check", "secrets", "--min", "info", *args], capture_output=True, text=True, encoding="utf-8", errors="replace", env=env, timeout=180)
+    return r.stdout + r.stderr
+
+
+def _cs(o):
+    m = _re_c.search(r"CACHE-SECRETS hits=(\d+) misses=(\d+)", o)
+    return (int(m.group(1)), int(m.group(2))) if m else None
+
+
+def _fl(o):
+    return sorted(l for l in o.splitlines() if "SECRET-" in l)
+
+
+try:
+    _c1 = _run_cached(_cv)
+    _c2 = _run_cached(_cv)
+    _nc = _run_cached(_cv, "--no-cache")
+    ok("secrets cache: the first run scans every text, the second reads them all from the cache", _cs(_c1) and _cs(_c1)[0] == 0 and _cs(_c1)[1] >= 2 and _cs(_c2) == (_cs(_c1)[1], 0), (_cs(_c1), _cs(_c2)))
+    ok("secrets cache: the findings of a cached run equal those of a no-cache run", _fl(_c1) == _fl(_c2) == _fl(_nc) and len(_fl(_c1)) >= 1, (_fl(_c1), _fl(_c2), _fl(_nc)))
+    ok("secrets cache: --no-cache never touches the cache", _cs(_nc) is None, _cs(_nc))
+    (_cv / "03-Resources" / "clean.md").write_text(_hd + "now key " + _fk2 + "\n", encoding="utf-8")
+    _c3 = _run_cached(_cv)
+    ok("secrets cache: an edited text is rescanned and its new finding appears", _cs(_c3) and _cs(_c3)[1] == 1 and "clean.md" in "\n".join(_fl(_c3))
+       and "clean.md" not in "\n".join(_fl(_c1)), (_cs(_c3), _fl(_c3)))
+    _db = _cv / "AI-Agent" / "state" / "vault-index.sqlite3"
+    _cn = _sq3.connect(str(_db))
+    _cn.execute("UPDATE secrets_scan_cache SET code_sha1 = 'other-code'")
+    _cn.commit(); _cn.close()
+    _c4 = _run_cached(_cv)
+    ok("secrets cache: rows made by other code or another shapes file are dropped and rescanned", _cs(_c4) and _cs(_c4)[0] == 0 and _fl(_c4) == _fl(_c3), (_cs(_c4), _fl(_c4)))
+finally:
+    _shutil.rmtree(_cv, ignore_errors=True)
+
+# --- sigkey reads key_file and fingerprint from release_profile.yaml ---
+_skv = _tmp_vault(_PROF % "[]" + "sigkey:\n  key_file: ''\n  fingerprint: ''\n", {})
+try:
+    _skr = _run_audit(_skv, "--check", "sigkey", "--min", "info")
+    ok("sigkey: reads configuration from release_profile.yaml and flags missing config loudly",
+       "SIGKEY-missing" in _skr and "release_profile.yaml" in _skr and "Traceback" not in _skr, _skr[-300:])
+finally:
+    _shutil.rmtree(_skv, ignore_errors=True)
 
 # --- final summary (must be last) ---
 for name, passed, got in R:

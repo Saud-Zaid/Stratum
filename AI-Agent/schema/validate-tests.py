@@ -205,6 +205,36 @@ def test_sidedoor_missing_config_warns():
     rc, msg = validate.check_sidedoor(Path("/nonexistent/config.yaml"))
     assert rc == 1 and "not found" in msg, (rc, msg)
 
+def test_goose_config_prefers_appdata_when_it_exists():
+    import os
+    with _tmpdir() as d:
+        cfg = Path(d) / "Block" / "goose" / "config" / "config.yaml"
+        cfg.parent.mkdir(parents=True)
+        cfg.write_text("x: 1\n", encoding="utf-8")
+        old = os.environ.get("APPDATA")
+        os.environ["APPDATA"] = d
+        try:
+            assert validate._goose_config() == cfg
+        finally:
+            if old is None:
+                os.environ.pop("APPDATA", None)
+            else:
+                os.environ["APPDATA"] = old
+
+
+def test_injection_log_rotation_keeps_static_childhood_first():
+    import decision_ledger as DL
+    with _tmpdir() as d:
+        log = Path(d) / "injection-log.jsonl"
+        rows = [{"kind": DL.STATIC_CHILDHOOD_KIND, "tokens": 5}] + [{"kind": "decision", "tokens": i} for i in range(4)]
+        log.write_text("\n".join(json.dumps(r) for r in rows) + "\n", encoding="utf-8")
+        archive = DL.rotate_injection_log(log, cap=3)
+        assert archive is not None and archive.is_file()
+        assert len([l for l in archive.read_text(encoding="utf-8").splitlines() if l.strip()]) == 5, "archive keeps the full history"
+        new = [json.loads(l) for l in log.read_text(encoding="utf-8").splitlines() if l.strip()]
+        assert len(new) == 1 and new[0]["kind"] == DL.STATIC_CHILDHOOD_KIND, new
+
+
 if __name__ == "__main__":
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     failed = 0

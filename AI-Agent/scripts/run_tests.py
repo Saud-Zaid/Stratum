@@ -36,6 +36,8 @@ def load_plan(root: Path, which: str = "core", lane: str = "all", only: str = ""
     plan = []
     for key in SETS[which]:
         for e in data.get(key) or []:
+            if isinstance(e, str):   # a bare path (most of the mother-only set): a direct test on the serial lane
+                e = {"path": e}
             if lane != "all" and e.get("lane", "serial") != lane:
                 continue
             if only and only not in e["path"]:

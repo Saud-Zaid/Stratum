@@ -28,7 +28,7 @@ This skill guides the execution and interpretation of the vault structural audit
 ### Comprehensive Ratchet Audit (Standard Gate)
 Run before submitting any multi-file changes or concluding a milestone:
 ```bash
-python AI-Agent/scripts/audit.py --ratchet
+.venv/bin/python AI-Agent/scripts/audit.py --ratchet
 ```
 Expected output signature:
 ```text
@@ -38,23 +38,23 @@ SUMMARY error=0 warn=0 info=...
 ### Targeted Subtree Audit (Rapid Iteration)
 When modifying a specific document or directory:
 ```bash
-python AI-Agent/scripts/audit.py --path "<path_prefix>"
+.venv/bin/python AI-Agent/scripts/audit.py --path "<path_prefix>"
 ```
 
 ### Focused Rule Checks
 Target specific failure domains:
 ```bash
 # Verify links and heading references
-python3 AI-Agent/scripts/audit.py --check links
+.venv/bin/python AI-Agent/scripts/audit.py --check links
 
 # Verify heading uniqueness (R1-dup) and depth (R3)
-python3 AI-Agent/scripts/audit.py --check headings
+.venv/bin/python AI-Agent/scripts/audit.py --check headings
 
 # Verify frontmatter YAML parsing and schema compliance
-python3 AI-Agent/scripts/audit.py --check frontmatter,schema
+.venv/bin/python AI-Agent/scripts/audit.py --check frontmatter,schema
 
 # Check trap registry integrity
-python3 AI-Agent/scripts/audit.py --check registry
+.venv/bin/python AI-Agent/scripts/audit.py --check registry
 ```
 
 ## Audit Rule Reference
@@ -76,6 +76,6 @@ python3 AI-Agent/scripts/audit.py --check registry
 
 - When fixing legacy warnings, the ratchet threshold should be updated:
   ```bash
-  python3 AI-Agent/scripts/audit.py --ratchet --update-baseline
+  .venv/bin/python AI-Agent/scripts/audit.py --ratchet --update-baseline
   ```
 - The baseline count may only decrease (ratcheting down debt); increasing the baseline count is strictly prohibited.

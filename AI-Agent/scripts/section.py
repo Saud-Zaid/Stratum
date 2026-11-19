@@ -6,6 +6,7 @@ Usage: section <path> <heading-query | L<start>-<end>> [max_lines] [--all] [--by
 T-11 (FX06): borrowed ceiling — the output is capped at MAX_BYTES (default 4000),
 the remaining size is printed explicitly so the agent knows what is left to fetch.
 """
+import re
 import sys
 from _vaultlib import VAULT, normalize_ar, read, sections, standard_parser
 
@@ -27,9 +28,9 @@ if not path.is_file():
 text = read(path)
 lines = text.splitlines()
 
-if query.startswith("L") and "-" in query[1:]:
-    a, b = query[1:].split("-", 1)
-    start, end = int(a), min(int(b), len(lines))
+_range = re.fullmatch(r"L(\d+)-(\d+)", query)   # only L<digits>-<digits>: "Live-Agent" is a heading query, not a range
+if _range:
+    start, end = max(int(_range.group(1)), 1), min(int(_range.group(2)), len(lines))   # line 0 does not exist (lines[-1] is the last line)
 else:
     q = normalize_ar(query)
     hits = [s for s in sections(text) if q in normalize_ar(s[1])]

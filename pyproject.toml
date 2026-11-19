@@ -1,6 +1,6 @@
 [project]
 name = "stratum"
-version = "1.0.0b1"
+version = "1.0.0b2"
 description = "Stratum: a vault runtime for AI agents working over Obsidian notes"
 requires-python = ">=3.11,<3.14"
 dependencies = [
@@ -27,7 +27,7 @@ stratum-restore-ready = "stratum_cli.main:restore_ready"
 stratum-entry-map = "stratum_cli.main:entry_map"
 
 [build-system]
-requires = ["uv_build>=0.12,<0.13"]
+requires = ["uv_build>=0.12,<0.15"]
 build-backend = "uv_build"
 
 [tool.uv.build-backend]

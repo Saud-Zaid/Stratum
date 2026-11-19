@@ -10,7 +10,7 @@ Before launching ANY subagent (`delegate`, any recipe, any parallel fleet), the 
 
 1. Read `AI-Agent/handoff.md` — invariants, and where everything lives.
 2. Read `AI-Agent/skills/vault-writer/SKILL.md` — how to write a note (frontmatter, tags, headings, progress log).
-3. Run `stratum-state` (or `python AI-Agent/scripts/state.py`) — the current state, derived from the vault. Never trust a state written in prose.
+3. Run `.venv/bin/stratum-state` (or `.venv/bin/python AI-Agent/scripts/state.py`) — the current state, derived from the vault. Never trust a state written in prose.
 4. Live reference: before you use a tool or a skill, run the tool's `--help` (exit 0) or read the skill's `SKILL.md`, and read `.vault-release/pending-review.json` when it exists. Never rely on a command remembered from a note under `01-Projects/` or from compressed memory.
 
 Every commit runs `audit.py --ratchet` through the pre-commit hook (`.githooks/pre-commit`). A note whose frontmatter breaks `AI-Agent/schema/frontmatter.yaml` blocks the commit, so the vault's backup stops until it is fixed.

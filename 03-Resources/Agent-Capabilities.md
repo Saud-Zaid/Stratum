@@ -69,7 +69,7 @@ What an agent can count on in a default setup.
 
 | Tool | What it does |
 |---|---|
-| `run_script` | runs a vetted script from `AI-Agent/scripts/` inside a harness sandbox; elsewhere run the script directly with `python AI-Agent/scripts/<name>.py` |
+| `run_script` | runs a vetted script from `AI-Agent/scripts/` inside a harness sandbox; elsewhere run the script directly with `.venv/bin/python AI-Agent/scripts/<name>.py` |
 | `exec_python` | runs Python in a sandbox; use it for read-only verification such as `git diff` (TR-0025) |
 | `delegate` | hands a task to a subagent; never ad hoc for deliverable tasks — go through `agent-launch` and a recipe file (TR-0030) |
 

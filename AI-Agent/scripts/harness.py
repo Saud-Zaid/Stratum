@@ -58,7 +58,7 @@ def probe(cid):
         try:
             r = subprocess.run(
                 [sys.executable, os.path.join(VAULT, "AI-Agent", "scripts", "session_budget.py"), "--start", "small"],
-                capture_output=True, text=True, timeout=30,
+                capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=30,
             )
             return r.returncode == 0 and "BUDGET-START" in r.stdout, "BUDGET-START rc=%d" % r.returncode
         except Exception as e:

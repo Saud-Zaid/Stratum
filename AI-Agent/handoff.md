@@ -10,13 +10,13 @@ created: 2026-09-18
 
 ## Session Start
 
-1. Run `state`: `stratum-state` (or `python AI-Agent/scripts/state.py`). It prints what is true now: recent changes, the commit gate, active work with its next steps and latest progress, and due dates. This file holds no state and no counts on purpose: written state goes stale between sessions.
+1. Run `state`: `.venv/bin/stratum-state` (or `.venv/bin/python AI-Agent/scripts/state.py`). It prints what is true now: recent changes, the commit gate, active work with its next steps and latest progress, and due dates. This file holds no state and no counts on purpose: written state goes stale between sessions.
 2. If you cannot run it, treat the current state as unknown and ask the vault owner. Do not reconstruct it from memory or from old notes.
 
 ### If state fails
 
 1. Read `AI-Agent/handoff.md` (this file) — it never depends on state.py.
-2. Generate the map directly: `python AI-Agent/scripts/entry_map.py`. It walks the filesystem only — untracked files appear, gitignored secrets/indexes are excluded, output is read-only to stdout, capped at depth 3 / 200 lines / 8 KB. No state.py involved, so a state failure never strands the entry path.
+2. Generate the map directly: `.venv/bin/python AI-Agent/scripts/entry_map.py`. It walks the filesystem only — untracked files appear, gitignored secrets/indexes are excluded, output is read-only to stdout, capped at depth 3 / 200 lines / 8 KB. No state.py involved, so a state failure never strands the entry path.
 3. Tell the owner the automated path failed and which step broke. Never reconstruct state from memory or old notes.
 
 ### Mini-path for subagents (copy verbatim into delegate instructions)
@@ -33,7 +33,7 @@ created: 2026-09-18
 - **Progress Log:** Record progress where the work lives, as it happens, not at the end of a conversation. At each checkpoint (a decision, a finished step, a blocker) append one line to the work stream's own note, under `## Progress Log` (Areas: `## Changelog`): `- YYYY-MM-DD — <what happened> (<agent>)`, keeping the section's existing order. `state.py` reads the newest lines back by date.
 - **Never write unescaped `$`** in text or regex replacements (KaTeX, TR-0022).
 - **Heading Integrity (R1-dup):** Every heading in a file must be unique across all levels.
-- **Partial Reading:** Read notes over 4 KB by section (`get_vault_file_partial`, `python AI-Agent/scripts/section.py`), not whole.
+- **Partial Reading:** Read notes over 4 KB by section (`get_vault_file_partial`, `.venv/bin/python AI-Agent/scripts/section.py`), not whole.
 - **Skills:** Follow `AI-Agent/skills/README.md`; load a `SKILL.md` only when its task is in hand.
 - **Live reference:** before using a tool or a skill, run the tool's `--help` (exit 0) or read the skill's `SKILL.md`, and read `.vault-release/pending-review.json` when it exists. Never rely on a command remembered from `01-Projects/` notes or from compressed memory (RL-0015, TR-0005).
 - **Probe-before-invest:** before any investment in a new mechanism, run the decisive cheap capability probe first.

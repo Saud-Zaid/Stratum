@@ -109,7 +109,7 @@ def test_cli_execution():
             "--mode", "demo",
             "--output", str(out_file),
         ]
-        res = subprocess.run(cmd, capture_output=True, text=True)
+        res = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
         ok("T10-cli-exit-0", res.returncode == 0, f"code={res.returncode}")
         ok("T11-cli-output-created", out_file.exists() and out_file.stat().st_size > 500, f"size={out_file.stat().st_size if out_file.exists() else 0}")
 

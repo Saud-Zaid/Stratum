@@ -143,7 +143,7 @@ def t9_layers():
 
 
 def t10_cli():
-    r = subprocess.run([sys.executable, SCRIPT], capture_output=True, text=True, timeout=60)
+    r = subprocess.run([sys.executable, SCRIPT], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=60)
     if r.returncode != 0 or "CAP-LAYER" not in r.stdout:
         fail("t10_cli", "rc=%d out=%r" % (r.returncode, r.stdout[:200]))
         return
@@ -154,7 +154,7 @@ def t10_cli():
 
 
 def t11_cli_json():
-    r = subprocess.run([sys.executable, SCRIPT, "--json"], capture_output=True, text=True, timeout=60)
+    r = subprocess.run([sys.executable, SCRIPT, "--json"], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=60)
     if r.returncode != 0:
         fail("t11_cli_json", "rc=%d" % r.returncode)
         return

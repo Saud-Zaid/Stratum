@@ -214,6 +214,120 @@ try:
 finally:
     _os.environ.pop("STRATUM_NET_LOG", None)
 
+# STRATUM_SKIP_NET=1: no probe is made, the line stays visible as `skipped`, and IPv6 is not probed once IPv4 answers
+_nl2 = Path(_tf.mkdtemp()) / "net2.log"
+_os.environ["STRATUM_NET_LOG"] = str(_nl2)
+_calls = []
+try:
+    _os.environ["STRATUM_SKIP_NET"] = "1"
+    S._probe = lambda host, port, af: _calls.append(af) or True
+    ok("T-06-skip-net-makes-no-probe-and-reports-skipped", S._net_preflight() == "skipped" and not _calls, _calls)
+    ok("T-06b-skip-net-still-writes-the-log-line", "skipped" in _nl2.read_text(encoding="utf-8"))
+    _os.environ.pop("STRATUM_SKIP_NET")
+    _calls.clear()
+    import socket as _sk
+    ok("T-06c-ipv4-up-skips-the-ipv6-probe", S._net_preflight() == "up" and set(_calls) == {_sk.AF_INET}, _calls)
+finally:
+    _os.environ.pop("STRATUM_NET_LOG", None)
+    _os.environ.pop("STRATUM_SKIP_NET", None)
+
+# Step 5: digits of any script normalise to ASCII with no locale data, and dates written with them parse
+ok("T-07-normalize-digits-handles-arabic-indic-extended-and-devanagari", S.normalize_digits(_U(r"\u0662\u0660\u0662\u0666-\u06f1\u06f1-\u0967\u096f ok 7")) == "2026-11-19 ok 7", S.normalize_digits(_U(r"\u0662\u0660\u0662\u0666-\u06f1\u06f1-\u0967\u096f ok 7")))
+ok("T-07b-line-date-reads-an-arabic-indic-iso-date", S.line_date(_U(r"- \u0662\u0660\u0662\u0666-\u0661\u0661-\u0661\u0669 done")) == datetime.date(2026, 11, 19), S.line_date(_U(r"- \u0662\u0660\u0662\u0666-\u0661\u0661-\u0661\u0669 done")))
+
+# AD13 B2: stale active work streams print one line; fresh ones keep full detail
+_today = datetime.date(2026, 11, 15)
+_nxt = ["first step", "second step", "third step", "fourth step"]
+_fresh_log = ["- 2026-11-10 - did a thing", "- 2026-11-14 - did another"]
+_stale_log = ["- 2026-09-01 - old", "- 2026-09-02 - older"]
+_r = S.active_rows("p.md", _nxt, _fresh_log, _today)
+ok("T60-fresh-full-detail", len(_r) == 1 + 3 + 2 and _r[0] == "- p.md\topen 4", _r)
+_r = S.active_rows("p.md", _nxt, _stale_log, _today)
+ok("T61-stale-one-line-plus-first-next", len(_r) == 2 and "stale" in _r[0] and "last 2026-09-02" in _r[0] and "first step" in _r[1], _r)
+_r = S.active_rows("p.md", [], [], _today)
+ok("T62-no-log-no-next-is-one-line", len(_r) == 1 and "last none" in _r[0] and "open 0" in _r[0], _r)
+_r = S.active_rows("p.md", _nxt, _stale_log, _today, full=True)
+ok("T63-full-flag-restores-detail", len(_r) == 1 + 3 + 2, _r)
+_edge = (_today - datetime.timedelta(days=S.STALE_DAYS)).isoformat()
+ok("T64-boundary-day-is-fresh", len(S.active_rows("p.md", _nxt, ["- %s - x" % _edge], _today)) == 1 + 3 + 1)
+_over = (_today - datetime.timedelta(days=S.STALE_DAYS + 1)).isoformat()
+ok("T65-day-after-boundary-is-stale", len(S.active_rows("p.md", _nxt, ["- %s - x" % _over], _today)) == 2)
+import subprocess as _sp
+_d = _sp.run([sys.executable, S.__file__], capture_output=True, text=True, encoding="utf-8", errors="replace").stdout
+_f = _sp.run([sys.executable, S.__file__, "--full"], capture_output=True, text=True, encoding="utf-8", errors="replace").stdout
+_nt = lambda o: "\n".join(l for l in o.splitlines() if not l.startswith("PREFLIGHT"))      # the preflight line carries a timing whose digits differ between two runs
+ok("T66-cli-full-not-smaller-than-default", len(_nt(_f)) >= len(_nt(_d)) and "## active work" in _d and "## active work" in _f, (len(_nt(_d)), len(_nt(_f))))
+# 2026-11-19 (Stratum): in a fresh release the notes are empty; --full must still be a superset of the default for every stream shape
+for _nm, _n, _l in (("empty", [], []), ("next only", ["a step"], []), ("stale log", ["a step"], _stale_log), ("fresh log", ["a step"], _fresh_log)):
+    _dflt = "\n".join(S.active_rows("p.md", _n, _l, _today))
+    _full = "\n".join(S.active_rows("p.md", _n, _l, _today, full=True))
+    ok(f"T66b-full-row-not-shorter-than-default ({_nm})", len(_full) >= len(_dflt), (len(_dflt), len(_full)))
+
+
+
+# --- Fable review: a malformed date in one note must not crash the session-start script ---
+def _noexc(fn):
+    try:
+        return fn()
+    except Exception as exc:   # noqa: BLE001
+        return exc
+
+
+def _state_cli(notes, *args):
+    """Run the real entry point on a temporary vault; returns (exit code, stdout + stderr)."""
+    root = Path(tempfile.mkdtemp(prefix="state-cli-"))
+    try:
+        for name, body in notes.items():
+            f = root / name
+            f.parent.mkdir(parents=True, exist_ok=True)
+            if body is None:
+                f.symlink_to(root / "gone-target.md")
+            else:
+                f.write_text(body, encoding="utf-8")
+        env = dict(_os.environ, VAULT=str(root), STRATUM_NET_LOG=str(root / "net.log"))
+        r = _sp.run([sys.executable, S.__file__, *args], capture_output=True, text=True, encoding="utf-8", errors="replace", env=env, timeout=120)
+        return r.returncode, r.stdout + r.stderr
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+
+
+ok("T70-line-date-impossible-iso-is-none", _noexc(lambda: S.line_date("- 2026-02-30 typo")) is None, repr(_noexc(lambda: S.line_date("- 2026-02-30 typo"))))
+ok("T71-line-date-skips-a-digit-run-and-finds-the-real-date", _noexc(lambda: S.line_date("ticket 1234-56-78 closed 2026-10-01")) == datetime.date(2026, 10, 1),
+   repr(_noexc(lambda: S.line_date("ticket 1234-56-78 closed 2026-10-01"))))
+aok("T72-line-date-impossible-arabic-day-is-none", _noexc(lambda: S.line_date(_U(r"31 \u0633\u0628\u062a\u0645\u0628\u0631 2026"))) is None,
+    repr(_noexc(lambda: S.line_date(_U(r"31 \u0633\u0628\u062a\u0645\u0628\u0631 2026")))))
+_ll = ["- 2026-13-01 typo", "- 2026-10-01 real"]
+ok("T73-latest-survives-an-impossible-date", _noexc(lambda: S.latest(_ll)) == _ll, repr(_noexc(lambda: S.latest(_ll))))
+_rc, _out = _state_cli({"n.md": "# n\n\n- [ ] later [id:: D-01] \U0001F4C5 2026-02-30\n- [ ] soon [id:: D-02] \U0001F4C5 2020-01-01\n"})
+ok("T74-cli-deferral-with-impossible-date-does-not-crash", _rc == 0 and "Traceback" not in _out and "DEF\tD-02\tn.md\tdated 2020-01-01" in _out, _out[-400:])
+
+_rc, _out = _state_cli({"n.md": "---\ndue: 2020-01-01 10:00:00\n---\n# n\n", "d.md": "---\ndue: 2020-01-02\n---\n# d\n"})
+ok("T75-cli-due-with-a-time-does-not-crash-and-is-listed", _rc == 0 and "Traceback" not in _out and "due\t2020-01-01\tn.md" in _out and "due\t2020-01-02\td.md" in _out, _out[-400:])
+
+_rc, _out = _state_cli({"d.md": "---\ndue: 2020-01-02\n---\n# d\n", "dangling.md": None})   # None: a .md symlink whose target is gone
+ok("T76-cli-dangling-md-symlink-does-not-crash", _rc == 0 and "Traceback" not in _out and "due\t2020-01-02\td.md" in _out and "## deferrals" in _out, _out[-400:])
+
+# the gate's audit is bounded by a timeout (20s when the network is down); running out of time must be reported, not raised
+_real_run, _saved = S.subprocess.run, S.PROFILE
+
+
+def _slow_audit(cmd, *a, **kw):
+    if any(str(x).endswith("audit.py") for x in cmd):
+        raise _sp.TimeoutExpired(cmd, kw.get("timeout", 0))
+    return _real_run(cmd, *a, **kw)
+
+
+try:
+    S.subprocess.run = _slow_audit
+    S.PROFILE = {**_saved, "checks": {"disabled": ["arch", "club"]}}
+    _buf = io.StringIO()
+    with contextlib.redirect_stdout(_buf):
+        _exc = _noexc(lambda: S.run_default(1))
+    _o = _buf.getvalue()
+    ok("T77-audit-timeout-is-reported-and-the-rest-still-prints", _exc is None and "GATE UNKNOWN" in _o and "## active work" in _o and "## due" in _o, (repr(_exc), _o[-300:]))
+finally:
+    S.subprocess.run, S.PROFILE = _real_run, _saved
+
 F, P = sum(1 for _, c, _ in R if not c), sum(1 for _, c, _ in R if c)
 print(f"STATE-TESTS {P}/{len(R)}")
 for name, c, got in R:

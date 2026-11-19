@@ -108,7 +108,7 @@ def test_cli_subprocess_contract():
     script = SCRIPTS_DIR / "tool_gate.py"
 
     # 1. CLI JSON output
-    res_json = subprocess.run([str(python_bin), str(script), "check-read", "AI-Agent/schema/budget.yaml", "--json"], capture_output=True, text=True)
+    res_json = subprocess.run([str(python_bin), str(script), "check-read", "AI-Agent/schema/budget.yaml", "--json"], capture_output=True, text=True, encoding="utf-8", errors="replace")
     try:
         data = json.loads(res_json.stdout)
         json_valid = data["admitted"] is True and "lines" in data
@@ -118,7 +118,7 @@ def test_cli_subprocess_contract():
 
     # 2. CLI exit code 1 on rejection
     large_note = "AI-Agent/scripts/audit.py"
-    res_rej = subprocess.run([str(python_bin), str(script), "check-read", large_note], capture_output=True, text=True)
+    res_rej = subprocess.run([str(python_bin), str(script), "check-read", large_note], capture_output=True, text=True, encoding="utf-8", errors="replace")
     ok("T10-cli-exit-code-on-rejection", res_rej.returncode == 1 and "[REJECT]" in res_rej.stdout,
        f"returncode={res_rej.returncode}")
 

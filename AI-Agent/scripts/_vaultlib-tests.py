@@ -21,6 +21,7 @@ from datetime import date
 from pathlib import Path
 
 import _vaultlib as L
+L.scrub_git_env()   # hook variables must not reach temporary repositories below (T53)
 
 R = []
 
@@ -510,10 +511,354 @@ try:
         shutil.rmtree(_t, ignore_errors=True)
     ok("T117-entropy-measure", L.shannon_entropy("aaaa") == 0.0 and abs(L.shannon_entropy("abcd") - 2.0) < 1e-9 and L.shannon_entropy("") == 0.0)
     ok("T44-defaults-not-mutated", L._PROFILE_DEFAULTS["checks"]["disabled"] == [])
+    # AD13 B3: Persian letters, presentation forms and invisible joiners fold; distinct roots stay distinct (no stemming)
+    aok("T45-b3-persian-and-presentation-forms",
+       L.normalize_ar(_U(r"\u06a9\u062a\u0627\u0628")) == L.normalize_ar(_U(r"\u0643\u062a\u0627\u0628"))
+       and L.normalize_ar(_U(r"\ufefb")) == L.normalize_ar(_U(r"\u0644\u0627"))
+       and L.normalize_ar(_U(r"\u0643\u200c\u062a\u0627\u0628")) == L.normalize_ar(_U(r"\u0643\u062a\u0627\u0628")))
+    ok("T46-b3-negative-control-roots-not-merged",
+       L.normalize_ar(_U(r"\u0639\u0644\u0645")) != L.normalize_ar(_U(r"\u0639\u0627\u0644\u0645"))
+       and L.normalize_ar(_U(r"\u0643\u062a\u0627\u0628")) != L.normalize_ar(_U(r"\u0643\u0627\u062a\u0628")))
+    os.environ["STRATUM_NORMALIZE_EXTRA"] = "0"
+    off = L.normalize_ar(_U(r"\u06a9")) == _U(r"\u06a9")
+    del os.environ["STRATUM_NORMALIZE_EXTRA"]
+    aok("T47-b3-kill-switch", off and L.normalize_ar(_U(r"\u06a9")) == _U(r"\u0643"))
+    # AD13 E7: one import policy and parser shared by audit and impact
+    src = '"""from fakepkg import x"""\nimport os.path\nfrom yaml import safe_load\nfrom . import sibling\nfrom mediator import m\n'
+    ok("T48-e7-roots-real-imports-only", L.script_import_roots(src) == {"os", "yaml", "mediator"}, str(L.script_import_roots(src)))
+    ok("T49-e7-syntax-error-fallback-and-none",
+       L.script_import_roots("import json\ndef (:\n") == {"json"} and L.script_import_roots("def (:\n", fallback=False) is None)
+    ok("T50-e7-policy-negative-and-positive",
+       L.unapproved_imports({"os", "yaml", "mediator", "decision_ledger", "_vaultlib", "sib"}, {"sib"}) == []
+       and L.unapproved_imports({"requests", "yaml", "optmod"}, set(), {"optmod"}) == ["requests"])
+    _real_map = dict(L.SCRIPT_THIRD_PARTY)
+    L.SCRIPT_THIRD_PARTY.clear()
+    L.SCRIPT_THIRD_PARTY["demo_script"] = {"libone", "libtwo"}   # a synthetic mapping: the rule is tested, not any real script
+    try:
+        ok("T50b-adr021-per-script-libraries-stay-scoped",
+           L.unapproved_imports({"libone", "libtwo"}, set(), script="demo_script") == []
+           and L.unapproved_imports({"libone", "libtwo"}, set(), script="other") == ["libone", "libtwo"]
+           and L.unapproved_imports({"libone"}, set()) == ["libone"])
+    finally:
+        L.SCRIPT_THIRD_PARTY.clear()
+        L.SCRIPT_THIRD_PARTY.update(_real_map)
+    # Fable review: an impossible calendar date makes PyYAML raise ValueError (not YAMLError); it is that note's
+    # front matter error, never a crash of every tool that parses the vault
+    def _fm_or_exc(raw):
+        try:
+            return L.load_frontmatter(raw)
+        except Exception as exc:   # noqa: BLE001
+            return exc
+    _bad = _fm_or_exc("due: 2026-11-31\n")
+    ok("T51-impossible-date-is-an-fm-error-not-a-crash", isinstance(_bad, tuple) and _bad[0] == {} and "out of range" in _bad[1], repr(_bad))
+    _bad = _fm_or_exc("at: 2026-11-30 25:00:00\n")
+    ok("T52-impossible-time-is-an-fm-error-not-a-crash", isinstance(_bad, tuple) and _bad[0] == {} and _bad[1], repr(_bad))
+    try:
+        _d = L.parse("---\ncreated: 2026-02-30\n---\n# a\n")
+        ok("T53-parse-survives-an-impossible-date", _d.has_fm and _d.fm == {} and _d.fm_error and [h.title for h in _d.headings] == ["a"], repr(_d.fm_error))
+    except Exception as exc:   # noqa: BLE001
+        ok("T53-parse-survives-an-impossible-date", False, repr(exc))
+    try:
+        ok("T54-frontmatter-keys-survives-an-impossible-date", L.frontmatter_keys("created: 2026-02-30\ntags: [a]\n") == ["created", "tags"], L.frontmatter_keys("created: 2026-02-30\ntags: [a]\n"))
+    except Exception as exc:   # noqa: BLE001
+        ok("T54-frontmatter-keys-survives-an-impossible-date", False, repr(exc))
+    ok("T55-control-a-valid-date-still-loads", L.load_frontmatter("due: 2026-11-30\n") == ({"due": date(2026, 11, 30)}, ""))
 finally:
     L.VAULT = ORIG_VAULT
     L.CLUB_AREA = _U(r"02-Areas/\u0646\u0627\u062f\u064a-\u0637\u0648\u064a\u0642-\u062a\u0643.md")
     shutil.rmtree(TMP, ignore_errors=True)
+
+    # AD13 D7: more credential shapes, placeholder-aware scanning, people-data shapes. Fakes are assembled at run time.
+    def names(t, **kw):
+        return [d for _, _, d in L.scan_secrets(t, **kw)]
+    A28 = "A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6"
+    shapes = {
+        "OpenAI key (legacy shape)": _tok("sk", "-", A28),
+        "OpenRouter key": _tok("sk-", "or-", "v1-", A28),
+        "Google API key": _tok("AI", "za", "SyA1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6q"),
+        "Stripe live key": _tok("sk", "_live", "_", A28),
+        "JSON Web Token": _tok("ey", "J", "hbGciOiJIUzI1NiJ9", ".", "ey", "J", "zdWIiOiIxMjM0NTY3ODkwIn0", ".", "abcDEF123_-xyz789"),
+        "database URL with a password": _tok("post", "gres://", "app:", "Tr0ub4dor3xyz", "@db.internal.corp.net/main"),
+        "Slack webhook": _tok("https://hooks", ".slack.com/services/", "T0ABC123/B0DEF456/", A28[:24]),
+        "Hugging Face token": _tok("hf", "_", A28),
+        "SendGrid key": _tok("SG", ".", "A1b2C3d4E5f6G7h8", ".", "I9j0K1l2M3n4O5p6"),
+        "Telegram bot token": _tok("123456789", ":", "AA", "A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6q"),
+        "GitHub app or refresh token": _tok("gh", "s_", A28 + "7r8"),
+    }
+    got = {k: names(v) for k, v in shapes.items()}
+    ok("T51-d7-each-new-shape-is-found-once-by-name", all(got[k] == [k] for k in shapes), {k: v for k, v in got.items() if v != [k]})
+    ok("T52-d7-existing-shape-numbers-did-not-move", [L.SECRET_PATTERNS[i][1] for i in (0, 2, 4, 5)] == ["Anthropic key", "GitHub token", "GitHub fine-grained token", "AWS access key"]
+       and names(_tok("sk-", "ant-", "a" * 30)) == ["Anthropic key"] and names(_tok("sk-", "proj-", "a" * 30)) == ["OpenAI project key"])
+    ok("T53-d7-lookalikes-are-not-findings",
+       not names("pip install scikit-learn sk-learn hf_model_name task-12345678901234567890") and not names(_tok("ey", "J", "abc.", "ey", "J", "def")) and not names(_tok("AI", "za", "short"))
+       and not names("postgres://localhost/main") and not names("https://example.com/services/T1/B2/c3"))
+    ok("T54-d7-placeholder-is-skipped-only-when-asked",
+       names(_tok("sk", "_live", "_", "x" * 24)) == ["Stripe live key"] and names(_tok("sk", "_live", "_", "x" * 24), placeholders_ok=True) == []
+       and names(_tok("sk", "_live", "_", A28), placeholders_ok=True) == ["Stripe live key"])
+    ok("T55-d7-documentation-database-urls-skipped-real-ones-kept",
+       names(_tok("post", "gres://user:pass@localhost/db"), placeholders_ok=True) == [] and names(_tok("redis://", "default:pass", "word@127.0.0.1:6379"), placeholders_ok=True) == []
+       and names(shapes["database URL with a password"], placeholders_ok=True) == ["database URL with a password"])
+    _jwt_sample = _tok("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9", ".", "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ", ".", "SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c")
+    ok("T56b-d7-public-documentation-samples-are-skipped-only-in-the-wide-scope",
+       names(_jwt_sample, placeholders_ok=True) == [] and names(_jwt_sample) == ["JSON Web Token"]
+       and names(_tok("AI", "za", "SyDaGmWKa4JsXZ-HjGw7ISLn_3namBGewQe"), placeholders_ok=True) == []
+       and names(_tok("AI", "za", "SyA1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6q"), placeholders_ok=True) == ["Google API key"])
+    ok("T56-d7-detail-never-holds-the-secret", all(v[:30] not in " ".join(names(v)) for v in shapes.values()))
+    # people data
+    pii = lambda t: [(k, n) for k, n, _ in L.scan_pii(t)]
+    ok("T57-d7-iban-contiguous-and-spaced", pii("iban " + _tok("SA", "03", "8000", "0000", "6080", "1016", "7519")) == [("iban", 1)]
+       and pii(_tok("SA", "03 8000 0000 6080 1016 7519")) == [("iban", 1)] and not pii("SA03 8000"))
+    ok("T58-d7-mobile-forms", all(pii(f"call {m} now") == [("mobile", 1)] for m in ("0512345678", "+966512345678", "00966512345678", "966512345678"))
+       and not pii("order 05123456789") and not pii("0412345678") and not pii("x 1051234567800"))
+    ok("T59-d7-national-id-needs-a-context-word-on-its-line",
+       pii("id number: 1234567890") == [("national-id", 1)] and pii("iqama 2123456789\nnote") == [("national-id", 1)]
+       and not pii("epoch 1700000000") and not pii("id number: 12345678901") and not pii("ten digits 1234567890 only"))
+    aok("T60-d7-arabic-context-word-counts", pii(_U(r"\u0631\u0642\u0645 \u0627\u0644\u0647\u0648\u064a\u0629: 1098765432")) == [("national-id", 1)])
+    ok("T61-d7-people-folder-name-is-the-real-folder-name", L.locale_value("PEOPLE_DIR") in (None, _U(r"02-Areas/\u0627\u0644\u0623\u0634\u062e\u0627\u0635")))
+
+    # AD13 D7 retrofit: shapes adapted from gitleaks (MIT), kept in AI-Agent/schema/secret-shapes.json. Fakes are assembled at run time.
+    import json as _json
+    import warnings as _w
+    doc = _json.loads(L._SHAPES_FILE.read_text(encoding="utf-8"))
+    ok("T62-d7-shapes-file-says-where-it-came-from",
+       all(k in doc for k in ("source", "license", "retrieved", "source_sha256", "changes")) and "MIT" in doc["license"] and doc["source"].startswith("https://github.com/gitleaks/gitleaks"), list(doc))
+    ids = [r["id"] for r in doc["rules"]]
+    ok("T63-d7-every-rule-compiles-on-this-python-and-ids-are-unique", len(L.adapted_shapes()) == len(doc["rules"]) == len(set(ids)) and len(ids) >= 200,
+       (len(L.adapted_shapes()), len(doc["rules"]), len(set(ids))))
+    ok("T64-d7-the-two-dropped-or-patched-rules", "generic-api-key" not in ids and not [r for r in doc["rules"] if r["id"] == "sourcegraph-access-token" and "{40})\\b)" in r["regex"] and "|[a-fA-F0-9]{40}" in r["regex"]])
+    AA = lambda n: ("A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q7r8S9t0U1v2W3x4Y5z6" * 3)[:n]
+    HH = lambda n: ("a1b2c3d4e5f60718293a4b5c6d7e8f90" * 4)[:n]
+    fam = {"npm-access-token": _tok("npm", "_", AA(36)), "digitalocean-pat": _tok("dop", "_v1_", HH(64)), "shopify-access-token": _tok("shp", "at_", HH(32)),
+           "linear-api-key": _tok("lin", "_api_", AA(40)), "perplexity-api-key": _tok("ppl", "x-", AA(48)), "doppler-api-token": _tok("dp", ".pt.", AA(43)),
+           "sourcegraph-access-token": _tok("sg", "p_", HH(40)), "huggingface-access-token": _tok("hf", "_", "aBcDeFgHiJkLmNoPqRsTuVwXyZaBcDeFgH")}
+    gotf = {k: [d for _, _, d in L.scan_secrets("key = " + v)] for k, v in fam.items()}
+    ok("T65-d7-each-sampled-family-is-found-once-and-named-by-rule", all(len(v) == 1 and (k in v[0] or (k == "huggingface-access-token" and v[0] == "Hugging Face token")) for k, v in gotf.items()),
+       {k: v for k, v in gotf.items() if len(v) != 1 or not (k in v[0] or v[0] == "Hugging Face token")})
+    ok("T66-d7-a-bare-forty-hex-id-is-not-a-finding", not L.scan_secrets("commit " + HH(40)) and not L.scan_secrets("sha1: " + HH(40) + "\n"))
+    ok("T67-d7-a-token-the-builtin-list-names-is-not-named-twice", [k for k, _, _ in L.scan_secrets(_tok("gh", "p_", AA(36)))] == ["pattern:2"])
+    ok("T68-d7-entropy-gate-and-placeholders-apply-to-adapted-shapes",
+       not L.scan_secrets(_tok("npm", "_", "a" * 36)) and L.scan_secrets(fam["npm-access-token"]) and not L.scan_secrets(_tok("npm", "_", "x" * 36), placeholders_ok=True))
+    ok("T69-d7-lookalikes-are-not-findings", not L.scan_secrets("npm_install npm_config_cache dp.pt.js lin_api_docs") and not L.scan_secrets("pplx-style sgp_ in prose"))
+    big = fam["npm-access-token"] + "\n" + "filler " * (L.ADAPTED_MAX_CHARS // 6) + "\n" + _tok("gh", "p_", AA(36))
+    ok("T70-d7-a-text-over-the-cap-keeps-the-builtin-shapes-only", [k for k, _, _ in L.scan_secrets(big)] == ["pattern:2"] and len(big) > L.ADAPTED_MAX_CHARS)
+    keep_file, keep_cache = L._SHAPES_FILE, L._SHAPES_CACHE
+    try:
+        L._SHAPES_FILE, L._SHAPES_CACHE = L._SHAPES_FILE.with_name("nope.json"), None
+        miss = L.scan_secrets(fam["npm-access-token"] + "\n" + _tok("gh", "p_", AA(36)))
+        bad = L._SHAPES_FILE.with_name("secret-shapes-broken.json")
+        bad.write_text("{not json", encoding="utf-8")
+        try:
+            L._SHAPES_FILE, L._SHAPES_CACHE = bad, None
+            brk = L.scan_secrets(fam["npm-access-token"] + "\n" + _tok("gh", "p_", AA(36)))
+        finally:
+            bad.unlink()
+    finally:
+        L._SHAPES_FILE, L._SHAPES_CACHE = keep_file, keep_cache
+    ok("T71-d7-a-missing-or-broken-shapes-file-leaves-the-builtin-scan-running", [k for k, _, _ in miss] == ["pattern:2"] and [k for k, _, _ in brk] == ["pattern:2"], (miss, brk))
+    class _Count:
+        def __init__(self, rx):
+            self.rx, self.calls = rx, 0
+
+        def finditer(self, text):
+            self.calls += 1
+            return self.rx.finditer(text)
+    shapes_now = L.adapted_shapes()
+    saved = [s["rx"] for s in shapes_now]
+    counters = [_Count(s["rx"]) for s in shapes_now]
+    try:
+        for s, c in zip(shapes_now, counters):
+            s["rx"] = c
+        L.scan_secrets("plain prose about the weather and a long lunch on a quiet friday " * 50)
+        idle = sum(c.calls for c in counters)
+        L.scan_secrets(fam["npm-access-token"])
+        busy = {s["id"] for s, c in zip(shapes_now, counters) if c.calls}
+    finally:
+        for s, rx in zip(shapes_now, saved):
+            s["rx"] = rx
+    ok("T72-d7-the-keyword-prefilter-keeps-regexes-from-running-on-plain-text",
+       idle == sum(1 for s in shapes_now if not s["kw"]) and "npm-access-token" in busy and len(busy) < 20, (idle, len(busy)))
+
+    # AD13 E7 prior-art retrofit (deptry's rules DEP001, DEP002, DEP005 and the dynamic-import blind spot)
+    dyn_src = ("import importlib\nimportlib.import_module('requests.adapters')\n__import__('numpy')\noptional_module('pandas')\n"
+               "name = 'x'\nimportlib.import_module(name)\nimportlib.import_module('')\nprint('json')\n")
+    ok("T73-e7-string-literal-dynamic-imports-are-seen-only-when-asked",
+       L.script_import_roots(dyn_src) == {"importlib"} and L.script_import_roots(dyn_src, dynamic=True) == {"importlib", "requests", "numpy", "pandas"},
+       (L.script_import_roots(dyn_src), L.script_import_roots(dyn_src, dynamic=True)))
+    ok("T74-e7-a-dynamic-import-of-an-unapproved-module-is-unapproved",
+       L.unapproved_imports(L.script_import_roots(dyn_src, dynamic=True), set()) == ["numpy", "pandas", "requests"])
+    import importlib.metadata as _md
+    import re as _re
+    from pathlib import Path as _P
+
+    def _pins(path):
+        out = []
+        for ln in _P(path).read_text(encoding="utf-8").splitlines():
+            ln = ln.split("#")[0].strip()
+            if ln and not ln.startswith("-"):      # option lines (--hash=...) of a uv lock export are not pins
+                out.append(_re.sub(r"[-_.]+", "-", _re.split(r"[\[<>=!~; ]", ln)[0]).lower())
+        return out
+    mod_dists = {}
+    for mod, dists in _md.packages_distributions().items():
+        for dname in dists:
+            mod_dists.setdefault(_re.sub(r"[-_.]+", "-", dname).lower(), set()).add(mod)
+    schema_dir = _P(L.__file__).resolve().parent.parent
+    _RF = next(iter(sorted(schema_dir.glob("requirements-*.txt"))), None)      # the pins of the per-script libraries; a tree without such a script has no such file
+    main_pins, extra_pins = _pins(schema_dir / "requirements.txt"), (_pins(_RF) if _RF is not None else [])
+    def mods_of(dname):
+        """Modules a pinned distribution provides: its installed metadata when this interpreter has it, plus the naming convention
+        (`libname` provides `libname`) for distributions that live in another environment (the per-script libraries, the Jev client's `mcp`)."""
+        return mod_dists.get(dname, set()) | {dname.replace("-", "_")}
+    allowed = set(L.ALLOWED_THIRD_PARTY) - {"_vaultlib"}
+    provided = set().union(*(mods_of(d) for d in main_pins))
+    # a library must be pinned when a script of THIS tree imports it (a release has no script that imports mcp, so its lock omits it)
+    _used = set()
+    for _sf in _P(L.__file__).resolve().parent.glob("*.py"):
+        if not _sf.name.endswith("-tests.py"):
+            _used |= set(L.script_import_roots(_sf.read_text(encoding="utf-8", errors="replace")))
+    _supplied_per_run = {"mcp"}      # jev_client imports it lazily and its docstring runs it as `uv run --with 'mcp<2'`: not a requirements pin in a release
+    ok("T75-e7-every-allowed-library-a-script-imports-is-pinned-in-requirements (DEP001)", (allowed & _used) - _supplied_per_run <= provided, sorted((allowed & _used) - _supplied_per_run - provided))
+    transitive_ok = {"mdurl"}      # pinned because markdown-it-py needs it; no script imports it
+    unused = [d for d in main_pins if d not in transitive_ok and not (mods_of(d) & allowed)]
+    if "--hash=" in (schema_dir / "requirements.txt").read_text(encoding="utf-8"):
+        print("SKIP T76: requirements.txt is a hash-pinned lock export (the whole closure is pinned, not only the allowed libraries)")
+    else:
+        ok("T76-e7-every-pin-is-an-allowed-library-or-a-named-transitive-one (DEP002)", not unused, unused)
+    extra_mods = {m for ms in L.SCRIPT_THIRD_PARTY.values() for m in ms}
+    extra_provided = set().union(*(mods_of(d) for d in extra_pins))
+    if _RF is not None:
+        ok("T77-e7-per-script-libraries-are-pinned-in-their-own-requirements-file (DEP001)", extra_mods <= extra_provided, sorted(extra_mods - extra_provided))
+    else:
+        print("SKIP T77: no per-script requirements file in this tree (no script here has per-script libraries)")
+    stdlib_pins = [d for d in main_pins + extra_pins if d.replace("-", "_") in sys.stdlib_module_names]
+    ok("T78-e7-no-pin-names-a-standard-library-module (DEP005)", not stdlib_pins, stdlib_pins)
+    ok("T79-e7-negative-control-an-unpinned-allowed-module-would-be-found", {"pyyaml_missing_mod"} - provided == {"pyyaml_missing_mod"} and "yaml" in provided)
+
+    # Step 1 helpers (run_utf8, run_git, sqlite_ro_uri, goose dirs/configs, ensure_o200k_cache, scan_tree, stdlib isolation)
+    import hashlib as _hl
+    import sqlite3 as _sq
+    import subprocess as _sp
+    _ar_word = _U(r"\u0645\u0631\u062d\u0628\u0627")
+    _r80 = L.run_utf8([sys.executable, "-c", "import sys; sys.stdout.buffer.write(sys.argv[1].encode('utf-8'))", _ar_word])
+    ok("T80-run-utf8-decodes-unicode", _r80.returncode == 0 and _r80.stdout == _ar_word, _r80.stdout)
+
+    _grepo = Path(tempfile.mkdtemp(prefix="vlib-git-"))
+    try:
+        _sp.run(["git", "init", "-q"], cwd=_grepo, check=True)
+        (_grepo / f"{_ar_word}.md").write_text("hi\n", encoding="utf-8")
+        _rg = L.run_git(_grepo, "status", "--porcelain")
+        ok("T81-run-git-preserves-utf8-paths", _rg.returncode == 0 and f"{_ar_word}.md" in _rg.stdout, _rg.stdout)
+    finally:
+        shutil.rmtree(_grepo, ignore_errors=True)
+
+    _sqdir = Path(tempfile.mkdtemp(prefix="vlib db space "))
+    try:
+        _dbp = _sqdir / "test.sqlite3"
+        _wc = _sq.connect(_dbp)
+        _wc.execute("CREATE TABLE t (x INT)")
+        _wc.execute("INSERT INTO t VALUES (42)")
+        _wc.commit()
+        _wc.close()
+        _rc = _sq.connect(L.sqlite_ro_uri(_dbp), uri=True)
+        _got_x = _rc.execute("SELECT x FROM t").fetchone()[0]
+        try:
+            _rc.execute("INSERT INTO t VALUES (99)")
+            _ro_blocked = False
+        except _sq.OperationalError:
+            _ro_blocked = True
+        _rc.close()
+        ok("T82-sqlite-ro-uri-with-spaces", _got_x == 42 and _ro_blocked, (_got_x, _ro_blocked))
+    finally:
+        shutil.rmtree(_sqdir, ignore_errors=True)
+
+    _l_dirs = [p.as_posix() for p in L.goose_session_dirs("linux", {"XDG_DATA_HOME": "/xdg"}, Path("/home/u"))]
+    _m_dirs = [p.as_posix() for p in L.goose_session_dirs("darwin", {}, Path("/Users/u"))]
+    _w_dirs = [str(p) for p in L.goose_session_dirs("win32", {"APPDATA": r"C:\AppData", "LOCALAPPDATA": r"C:\Local"}, Path(r"C:\Users\u"))]
+    _w_cfgs = [str(p) for p in L.goose_config_paths("win32", {"APPDATA": r"C:\AppData", "LOCALAPPDATA": r"C:\Local"}, Path(r"C:\Users\u"))]
+    ok("T83-goose-dirs-and-configs-cross-os",
+       _l_dirs[0] == "/xdg/goose/sessions"
+       and "/Users/u/Library/Application Support/Block/goose/sessions" in _m_dirs
+       and "/Users/u/Library/Application Support/goose/sessions" in _m_dirs
+       and any("Block" in p and "goose" in p for p in _w_dirs)
+       and any("Block" in p and "config.yaml" in p for p in _w_cfgs),
+       (_l_dirs, _m_dirs, _w_dirs))
+
+    _tcache = Path(tempfile.mkdtemp(prefix="vlib-tik-"))
+    _orig_tik = os.environ.get("TIKTOKEN_CACHE_DIR")
+    _orig_sha = L._O200K_SHA256
+    _orig_skip = os.environ.get("STRATUM_SKIP_NET")
+    try:
+        os.environ["TIKTOKEN_CACHE_DIR"] = str(_tcache)
+        os.environ["STRATUM_SKIP_NET"] = "1"
+        _key = _tcache / _hl.sha1(L._O200K_URL.encode("utf-8")).hexdigest()
+        _key.write_bytes(b"ok-vocab")
+        L._O200K_SHA256 = _hl.sha256(b"ok-vocab").hexdigest()
+        os.environ.pop("TIKTOKEN_CACHE_DIR", None)
+        _orig_default = L.default_tiktoken_cache_dir
+        L.default_tiktoken_cache_dir = lambda: _tcache
+        _ok84a = L.ensure_o200k_cache()
+        _env_set = os.environ.get("TIKTOKEN_CACHE_DIR") == str(_tcache)
+        # Verify temp cleanup when os.replace fails on Windows-like lock
+        _key.unlink()
+        os.environ.pop("STRATUM_SKIP_NET", None)
+        import urllib.request as _ur
+        class _Resp:
+            def __enter__(self): return self
+            def __exit__(self, *a): return False
+            def read(self): return b"ok-vocab"
+        _orig_open, _orig_rep = _ur.urlopen, os.replace
+        _calls84 = [0]
+        def _flaky_rep(a, b):
+            _calls84[0] += 1
+            if _calls84[0] < 2:
+                raise PermissionError("locked")
+            return _orig_rep(a, b)
+        try:
+            _ur.urlopen = lambda *a, **k: _Resp()
+            os.replace = _flaky_rep
+            _ok84b = L.ensure_o200k_cache(retries=3, sleeper=lambda _: None)
+        finally:
+            _ur.urlopen, os.replace = _orig_open, _orig_rep
+            L.default_tiktoken_cache_dir = _orig_default
+        ok("T84-ensure-o200k-sets-env-retries-and-no-leftover-tmp",
+           _ok84a and _env_set and _ok84b and _calls84[0] == 2 and not list(_tcache.glob(".o200k-*")),
+           (_ok84a, _env_set, _ok84b, _calls84[0]))
+    finally:
+        L._O200K_SHA256 = _orig_sha
+        if _orig_tik is None:
+            os.environ.pop("TIKTOKEN_CACHE_DIR", None)
+        else:
+            os.environ["TIKTOKEN_CACHE_DIR"] = _orig_tik
+        if _orig_skip is None:
+            os.environ.pop("STRATUM_SKIP_NET", None)
+        else:
+            os.environ["STRATUM_SKIP_NET"] = _orig_skip
+        shutil.rmtree(_tcache, ignore_errors=True)
+
+    _scdir = Path(tempfile.mkdtemp(prefix="vlib-scan-"))
+    try:
+        _tok_dyn = "ghp_" + "A" * 36
+        (_scdir / "AI-Agent" / "schema").mkdir(parents=True)
+        (_scdir / "AI-Agent" / "schema" / "secret-shapes.json").write_text(_tok_dyn, encoding="utf-8")
+        (_scdir / "notes").mkdir()
+        (_scdir / "notes" / "secret-shapes.json").write_text(_tok_dyn, encoding="utf-8")
+        _hits = L.scan_tree(_scdir)
+        _hits_sub = L.scan_tree(_scdir / "AI-Agent" / "schema")
+        ok("T85-scan-tree-skips-only-ai-agent-schema-secret-shapes",
+           [h[0] for h in _hits] == ["notes/secret-shapes.json"] and _hits_sub == [],
+           (_hits, _hits_sub))
+    finally:
+        shutil.rmtree(_scdir, ignore_errors=True)
+
+    _scripts_dir = Path(L.__file__).resolve().parent
+    _stdlib_ok = True
+    _bad_imps = {}
+    for _sf_name in ("upgrade_core.py", "restore_pre_upgrade.py", "install_plugins.py", "enable_mcp.py"):
+        _roots = set(L.script_import_roots((_scripts_dir / _sf_name).read_text(encoding="utf-8")))
+        _extra = sorted(_roots - set(sys.stdlib_module_names) - {"__future__", "upgrade_core"})
+        if _extra:
+            _stdlib_ok = False
+            _bad_imps[_sf_name] = _extra
+    ok("T86-stdlib-only-recovery-scripts-stay-pure", _stdlib_ok, _bad_imps)
 
 F, P = sum(1 for _, c, _ in R if not c), sum(1 for _, c, _ in R if c)
 print(f"VAULTLIB-TESTS {P}/{len(R)}")

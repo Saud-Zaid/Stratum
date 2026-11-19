@@ -18,12 +18,40 @@ jobs:
     continue-on-error: ${{ matrix.os == 'windows-latest' }}
     env:
       PYTHONUTF8: "1"
+      UV_NO_EDITABLE: "1"   # uv run would otherwise re-install the project editable (.pth)
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v5
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
       - name: Install the locked environment
-        run: uv sync --locked --no-dev
-      - name: Run the tests
-        run: uv run python AI-Agent/scripts/run_tests.py
+        run: uv sync --locked --no-dev --no-editable
+      - name: Run the setup script (macOS and Linux)
+        if: runner.os != 'Windows'
+        run: ./setup.sh
+      - name: Run the setup script (Windows)
+        if: runner.os == 'Windows'
+        run: .\setup.ps1
+      - name: Hide the environment folder (macOS)
+        # the --no-editable install must keep working when the folder carries the hidden flag that breaks editable .pth files
+        if: runner.os == 'macOS'
+        run: chflags -R hidden .venv
+      - name: Run the tests (macOS and Linux)
+        if: runner.os != 'Windows'
+        run: .venv/bin/python AI-Agent/scripts/run_tests.py
+      - name: Run the tests (Windows)
+        if: runner.os == 'Windows'
+        run: .\.venv\Scripts\python.exe AI-Agent\scripts\run_tests.py
+      - name: Run the tests without UTF-8 mode (Windows)
+        # shows what a console without PYTHONUTF8 would hit; the job is experimental on Windows, so it informs and does not block
+        if: runner.os == 'Windows'
+        continue-on-error: true
+        env:
+          PYTHONUTF8: ""
+        run: .\.venv\Scripts\python.exe AI-Agent\scripts\run_tests.py
+      - name: Run the pre-commit hook
+        shell: bash
+        run: |
+          git config user.name ci
+          git config user.email ci@example.invalid
+          sh .githooks/pre-commit
       - name: Audit the dependencies
         run: uvx pip-audit

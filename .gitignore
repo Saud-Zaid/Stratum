@@ -39,6 +39,10 @@ AI-Agent/state/throttle-state.json
 AI-Agent/state/task-key.json
 AI-Agent/state/session-memory.jsonl
 AI-Agent/state/injection-log.*.jsonl
+# the agent problem log is private to one machine: the commit-gate run log, the session digests and the weekly problem reports
+AI-Agent/state/gate-runs.jsonl
+AI-Agent/state/session-digests.jsonl
+AI-Agent/state/problems/
 AI-Agent/state/tool-matrix.md
 AI-Agent/state/net-preflight.log
 AI-Agent/state/spool/
@@ -49,3 +53,10 @@ AI-Agent/scratch/
 .vault-release/backups/
 .vault-release/staging/
 .vault-release/conflicts/
+
+# OS metadata and temporary credential prompts
+.DS_Store
+._*
+Thumbs.db
+desktop.ini
+.git_credentials_input
