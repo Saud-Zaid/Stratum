@@ -406,10 +406,14 @@ INDEX_SCHEMA_VERSION = 2
 def _open_index(p: Path) -> Any:
     import sqlite3
     conn = sqlite3.connect(str(p), timeout=5.0)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA busy_timeout=5000;")
-    conn.execute("PRAGMA journal_mode=WAL;")
-    conn.execute("PRAGMA synchronous=NORMAL;")
+    try:
+        conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA busy_timeout=5000;")
+        conn.execute("PRAGMA journal_mode=WAL;")   # raises DatabaseError on a corrupt file
+        conn.execute("PRAGMA synchronous=NORMAL;")
+    except BaseException:
+        conn.close()   # a leaked connection keeps the file open, and Windows cannot delete it to rebuild the store
+        raise
     return conn
 
 

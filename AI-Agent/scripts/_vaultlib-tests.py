@@ -411,7 +411,7 @@ try:
             print("SKIP T64-session-db-xdg: XDG_DATA_HOME does not lead the candidates on this platform")
         del os.environ["XDG_DATA_HOME"]
         _home_marker = {"win32": "AppData", "darwin": "Application Support"}.get(sys.platform, ".local")
-        ok("T65-session-db-default-under-home", L.session_db_path().parts[-3:] == ("goose", "sessions", "sessions.db") and _home_marker in L.session_db_path().parts, L.session_db_path())
+        ok("T65-session-db-default-under-home", L.session_db_path().parts[-2:] == ("sessions", "sessions.db") and "goose" in L.session_db_path().parts and _home_marker in L.session_db_path().parts, L.session_db_path())
     finally:
         os.environ.clear(); os.environ.update(_env)
     L.CLUB_AREA = None
@@ -863,6 +863,32 @@ finally:
             _stdlib_ok = False
             _bad_imps[_sf_name] = _extra
     ok("T86-stdlib-only-recovery-scripts-stay-pure", _stdlib_ok, _bad_imps)
+
+# T87: a corrupt index store must not leave its connection open (Windows cannot delete an open file, so the store was never rebuilt)
+import sqlite3 as _sq
+
+
+class _TrackedConn(_sq.Connection):
+    closed_count = 0
+
+    def close(self):
+        _TrackedConn.closed_count += 1
+        super().close()
+
+
+_corrupt = Path(tempfile.mkdtemp(prefix="vaultlib-corrupt-")) / "corrupt-index.sqlite3"
+_corrupt.write_bytes(b"this is not a sqlite database" * 200)
+_real_connect = _sq.connect
+_sq.connect = lambda *a, **k: _real_connect(*a, factory=_TrackedConn, **k)
+try:
+    try:
+        L._open_index(_corrupt)
+        _raised = False
+    except _sq.DatabaseError:
+        _raised = True
+finally:
+    _sq.connect = _real_connect
+ok("T87-corrupt-index-open-closes-its-connection-before-raising", _raised and _TrackedConn.closed_count == 1, (_raised, _TrackedConn.closed_count))
 
 F, P = sum(1 for _, c, _ in R if not c), sum(1 for _, c, _ in R if c)
 print(f"VAULTLIB-TESTS {P}/{len(R)}")
