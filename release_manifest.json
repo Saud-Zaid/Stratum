@@ -567,7 +567,7 @@
     },
     "AI-Agent/scripts/run_tests-tests.py": {
       "policy": "replace",
-      "sha256": "69e8b0da750e1953cac4cc5ddd5d7a7ad04555706ed840bede8843b781848bd5"
+      "sha256": "2a052c29f2e845290cf4158420858911f1f0e696c6a445de63f90361f827a098"
     },
     "AI-Agent/scripts/run_tests.py": {
       "policy": "replace",
@@ -923,7 +923,7 @@
     },
     "CHANGELOG.md": {
       "policy": "replace",
-      "sha256": "4e41bfb1486a3b10d2f6e50c48a275d230ffbcce82eea794fc77819c6f08f7f2"
+      "sha256": "97c6eb49e8da2387b27d6b8c3bf06725f681e0ff3408d4895b2030fb0e5a6040"
     },
     "CITATION.cff": {
       "policy": "replace",
