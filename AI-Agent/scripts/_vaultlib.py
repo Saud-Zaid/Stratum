@@ -421,6 +421,7 @@ def get_vault_index_db(db_path: Path | None = None) -> Any:
     p = Path(db_path) if db_path else INDEX_DB_PATH
     p.parent.mkdir(parents=True, exist_ok=True)
     why = ""
+    conn = None
     try:
         conn = _open_index(p)
         version = conn.execute("PRAGMA user_version").fetchone()[0]
@@ -432,6 +433,11 @@ def get_vault_index_db(db_path: Path | None = None) -> Any:
         conn.close()
     except sqlite3.DatabaseError as exc:
         why = f"{type(exc).__name__}: {exc}"
+        if conn is not None:   # Windows cannot delete a file that a connection still holds open
+            try:
+                conn.close()
+            except sqlite3.Error:
+                pass
     print(f"WARN vault-index: store at {p} rebuilt ({why})", file=sys.stderr)
     for suffix in ("", "-wal", "-shm"):
         try:

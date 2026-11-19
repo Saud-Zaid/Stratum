@@ -307,7 +307,9 @@ def test_corrupt_db_rebuilds_loudly():
 
 def test_forced_cache_failure_is_loud():
     """T28: when the store cannot be opened the audit still runs uncached, says so on stdout and stderr, and equals a no-cache run."""
-    bad = {"VAULT_INDEX_DB": "/proc/nonexistent-dir/idx.sqlite3"}
+    _barrier = Path(tempfile.mkdtemp()) / "barrier"
+    _barrier.write_text("a file where a folder is needed", encoding="utf-8")   # no store can open below a plain file, on any system
+    bad = {"VAULT_INDEX_DB": str(_barrier / "idx.sqlite3")}
     r = _audit(["--min", "info", "--limit", "100000"], VAULT_DIR, env=bad)
     ref = _audit(["--min", "info", "--limit", "100000", "--no-cache"], VAULT_DIR)
     ok("T28-cache-failure-is-loud-and-results-equal",

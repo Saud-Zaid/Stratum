@@ -405,9 +405,13 @@ try:
         ok("T63-session-db-env-wins", L.session_db_path() == TMP / "x.db", L.session_db_path())
         del os.environ["STRATUM_SESSION_DB"]
         os.environ["XDG_DATA_HOME"] = str(TMP / "xdg")
-        ok("T64-session-db-xdg", L.session_db_path() == TMP / "xdg" / "goose" / "sessions" / "sessions.db", L.session_db_path())
+        if sys.platform.startswith("linux"):   # XDG_DATA_HOME leads the candidates only on Linux; macOS and Windows use their own folders first
+            ok("T64-session-db-xdg", L.session_db_path() == TMP / "xdg" / "goose" / "sessions" / "sessions.db", L.session_db_path())
+        else:
+            print("SKIP T64-session-db-xdg: XDG_DATA_HOME does not lead the candidates on this platform")
         del os.environ["XDG_DATA_HOME"]
-        ok("T65-session-db-default-under-home", L.session_db_path().parts[-3:] == ("goose", "sessions", "sessions.db") and ".local" in L.session_db_path().parts, L.session_db_path())
+        _home_marker = {"win32": "AppData", "darwin": "Application Support"}.get(sys.platform, ".local")
+        ok("T65-session-db-default-under-home", L.session_db_path().parts[-3:] == ("goose", "sessions", "sessions.db") and _home_marker in L.session_db_path().parts, L.session_db_path())
     finally:
         os.environ.clear(); os.environ.update(_env)
     L.CLUB_AREA = None

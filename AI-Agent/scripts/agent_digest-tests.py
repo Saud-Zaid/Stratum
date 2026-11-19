@@ -263,8 +263,9 @@ else:
 # Step 4 fixes
 ok("S4a-home-slug-scrubs-the-windows-drive-prefix", A._HOME_SLUG.sub("~", "C--Users-dev-proj") == "~proj", A._HOME_SLUG.sub("~", "C--Users-dev-proj"))
 ok("S4b-home-slug-still-scrubs-posix", A._HOME_SLUG.sub("~", "-home-dev-proj") == "~proj")
+_vdir = str(Path("C:/My Vault"))   # Path may flip the separators on Windows: compare against what the function receives
 _w = A.schedule_text("windows", Path("C:/My Vault"), "C:/Py 3/python.exe")
-ok("S4c-windows-schedule-quotes-the-folder-and-escapes-inner-quotes", 'cd /d \\"C:/My Vault\\"' in _w and '\\"C:/Py 3/python.exe\\"' in _w, _w)
+ok("S4c-windows-schedule-quotes-the-folder-and-escapes-inner-quotes", 'cd /d \\"' + _vdir + '\\"' in _w and '\\"C:/Py 3/python.exe\\"' in _w, _w)
 _m = A.schedule_text("macos", Path("/Users/a&b/v"), "/opt/py<3>/python")
 ok("S4d-macos-plist-escapes-xml-and-sets-PATH", "a&amp;b" in _m and "py&lt;3&gt;" in _m and "<key>PATH</key>" in _m, _m)
 _gr = Path(tempfile.mkdtemp())
