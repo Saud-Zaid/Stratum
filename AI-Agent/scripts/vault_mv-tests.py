@@ -188,7 +188,8 @@ ok("percent-encoded link stays encoded, plain link with a space is angle-wrapped
 # --- 8 a copy of the real vault: a real move, oracle on the whole graph
 vault = REAL_VAULT
 real = Path(tempfile.mkdtemp(prefix="vmv-real-"))
-shutil.copytree(vault, real / "v", ignore=shutil.ignore_patterns(".git", ".obsidian", "node_modules", ".venv", ".vault-release", "export"))
+# the runtime state folder holds SQLite files that another test (a parallel audit) may have open; Windows cannot copy a locked file, and the move test never reads them
+shutil.copytree(vault, real / "v", ignore=shutil.ignore_patterns(".git", ".obsidian", "node_modules", ".venv", ".vault-release", "export", "state"))
 rv = real / "v"
 sh = lambda *c: subprocess.run(["git", "-C", str(rv)] + list(c), capture_output=True, text=True, encoding="utf-8", errors="replace")
 sh("init", "-q"); sh("config", "user.email", "t@t"); sh("config", "user.name", "t"); sh("add", "-A"); sh("commit", "-q", "-m", "copy")

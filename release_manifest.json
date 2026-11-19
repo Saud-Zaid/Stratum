@@ -655,7 +655,7 @@
     },
     "AI-Agent/scripts/vault_mv-tests.py": {
       "policy": "replace",
-      "sha256": "dbc0363ab670723f42e17d053dc9d07f8532ad2b0adb8695343ff7bb2e09bdd5"
+      "sha256": "3a8b54d55568c35605230c342eec39d66ca5272b1688bbd62be6e9ad8d0afd9f"
     },
     "AI-Agent/scripts/vault_mv.py": {
       "policy": "replace",
@@ -923,7 +923,7 @@
     },
     "CHANGELOG.md": {
       "policy": "replace",
-      "sha256": "97c6eb49e8da2387b27d6b8c3bf06725f681e0ff3408d4895b2030fb0e5a6040"
+      "sha256": "f304cd5ff7716121b33ac5fe12b2364c897472acfa1929b39fbe3f355c8bc66e"
     },
     "CITATION.cff": {
       "policy": "replace",

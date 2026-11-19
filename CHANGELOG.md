@@ -4,6 +4,9 @@ All notable changes to this project are documented in this file. The format foll
 
 ## [Unreleased]
 
+### Fixed
+- The `vault_mv` tests no longer copy the runtime state folder, whose SQLite files another test may hold open on Windows.
+
 ## [1.0.0-beta.3] - 2026-11-20
 
 ### Added
