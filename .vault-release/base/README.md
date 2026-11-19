@@ -1,6 +1,6 @@
 # Stratum
 
-> **Beta.** This is a beta release (`1.0.0-beta.3`). It is usable and tested, but its commands, file layout and defaults may still change before `1.0.0`; every change is listed in [CHANGELOG.md](CHANGELOG.md). Please report problems in the [issue tracker](https://github.com/Saud-Zaid/Stratum/issues).
+> **Beta.** This is a beta release (`1.0.0-beta.4`). It is usable and tested, but its commands, file layout and defaults may still change before `1.0.0`; every change is listed in [CHANGELOG.md](CHANGELOG.md). Please report problems in the [issue tracker](https://github.com/Saud-Zaid/Stratum/issues).
 
 Stratum is an [Obsidian](https://obsidian.md) vault that works with AI agents. It combines **PARA** (where things go) with **Zettelkasten** (how ideas grow), and puts a commit gate, a frontmatter schema, a trap registry and a set of skills around it, so that an agent can work on your notes and be checked mechanically instead of by trust.
 
@@ -38,7 +38,7 @@ Then:
 
 ## Plugins
 
-Thirteen community plugins are enabled. `mcp-tools-istefox` ships **disabled**: turn it on only when you want an MCP client to reach the vault (see [Agent Capabilities](03-Resources/Agent-Capabilities.md) and `enable_mcp.py`).
+Fourteen community plugins are enabled. `mcp-tools-istefox` ships **disabled**: turn it on only when you want an MCP client to reach the vault (see [Agent Capabilities](03-Resources/Agent-Capabilities.md) and `enable_mcp.py`).
 
 | Plugin | What it does |
 |---|---|
@@ -53,6 +53,7 @@ Thirteen community plugins are enabled. `mcp-tools-istefox` ships **disabled**: 
 | `omnisearch` | full-text search |
 | `consistent-attachments-and-links`, `advanced-rename-and-delete-handler` | keep links and attachments consistent on rename |
 | `automatic-table-of-contents` | the generated table of contents |
+| `stratum-iso-dates` | dates with ASCII digits (`2026-11-19`) when the interface language prints Arabic-Indic or Persian digits |
 
 Plugin code is not stored in this repository: `install_plugins.py` fetches each plugin over HTTPS and checks its SHA-256 against `.obsidian/plugins.lock.json`.
 

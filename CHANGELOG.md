@@ -4,6 +4,14 @@ All notable changes to this project are documented in this file. The format foll
 
 ## [Unreleased]
 
+## [1.0.0-beta.4] - 2026-11-20
+
+### Added
+- The `stratum-iso-dates` plugin (fourteen community plugins are enabled now). When the interface language prints Arabic-Indic or Persian digits, Obsidian's date formatting wrote the date `2026-11-19` in Arabic-Indic digits, a string that date queries skip; the plugin converts the digits of every formatted date to ASCII. Install it with `install_plugins.py`; it is MIT licensed and published at https://github.com/Saud-Zaid/stratum-iso-dates.
+
+### Changed
+- New Fleeting is `Mod+Shift+K` instead of `Mod+Shift+I`, which opens the developer tools on Windows and Linux. No Obsidian default or shipped plugin uses `Mod+Shift+K`; rebind it in Settings, Hotkeys if you prefer another key. A new install gets the new key; an upgrade leaves your own hotkeys file as it is, so an existing vault keeps `Mod+Shift+I` until you change it.
+
 ### Fixed
 - The `vault_mv` tests no longer copy the runtime state folder, whose SQLite files another test may hold open on Windows.
 
@@ -77,7 +85,8 @@ All notable changes to this project are documented in this file. The format foll
 ### Security
 - Plugin code is fetched over HTTPS and verified against pinned SHA-256 hashes; no plugin token is stored in the repository.
 
-[Unreleased]: https://github.com/Saud-Zaid/Stratum/compare/v1.0.0-beta.3...HEAD
+[Unreleased]: https://github.com/Saud-Zaid/Stratum/compare/v1.0.0-beta.4...HEAD
+[1.0.0-beta.4]: https://github.com/Saud-Zaid/Stratum/compare/v1.0.0-beta.3...v1.0.0-beta.4
 [1.0.0-beta.3]: https://github.com/Saud-Zaid/Stratum/compare/v1.0.0-beta.2...v1.0.0-beta.3
 [1.0.0-beta.2]: https://github.com/Saud-Zaid/Stratum/compare/v1.0.0-beta.1...v1.0.0-beta.2
 [1.0.0-beta.1]: https://github.com/Saud-Zaid/Stratum/releases/tag/v1.0.0-beta.1

@@ -1,6 +1,6 @@
 [project]
 name = "stratum"
-version = "1.0.0b3"
+version = "1.0.0b4"
 description = "Stratum: a vault runtime for AI agents working over Obsidian notes"
 requires-python = ">=3.11,<3.14"
 dependencies = [

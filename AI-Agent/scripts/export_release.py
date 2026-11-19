@@ -19,6 +19,7 @@ import fnmatch
 import hashlib
 import json
 import os
+import re
 import shutil
 import stat
 import subprocess
@@ -142,6 +143,27 @@ def sanitize_script(text: str, name: str = "") -> str:
 def load_release_edits(root: Path) -> dict:
     f = root / "AI-Agent/config/release-patches/script-edits.yaml"
     return (yaml.safe_load(f.read_text(encoding="utf-8")) or {}).get("edits", {}) if f.is_file() else {}
+
+
+def load_vocabulary(root: Path) -> list:
+    f = root / "AI-Agent/config/release-patches/script-edits.yaml"
+    return (yaml.safe_load(f.read_text(encoding="utf-8")) or {}).get("vocabulary", []) if f.is_file() else []
+
+
+def apply_vocabulary(text: str, vocab: list) -> str:
+    """Neutral example names for the owner's own words, case preserved (config: script-edits.yaml, never shipped)."""
+    for v in vocab:
+        rx = re.compile(v["pattern"])
+        if "replace" in v:
+            text = rx.sub(v["replace"], text)
+        else:
+            def sub(m, v=v):
+                w = m.group(0)
+                if v.get("all_upper") and w.isupper():
+                    return v["all_upper"]
+                return v["upper"] if w[0].isupper() else v["lower"]
+            text = rx.sub(sub, text)
+    return text
 
 
 def apply_release_edits(text: str, rel: str, edits: dict | None = None) -> str:
@@ -596,7 +618,7 @@ def write_release(root: Path, out: Path, plan: dict | None = None) -> dict:
         if Path(rel).suffix.lower() in TEXT_EXT | {".cmd", ".bat", ".ps1", ".toml"} or Path(rel).name in TEXT_NAMES:
             data = data.replace(b"\r\n", b"\n")   # the release is LF everywhere: its hashes must not depend on the author's checkout
         if rel.endswith(".py"):
-            data = add_spdx(data.decode("utf-8")).encode("utf-8")
+            data = add_spdx(apply_vocabulary(data.decode("utf-8"), vocabulary)).encode("utf-8")
         dest.write_bytes(data)
         if mode_from is not None and mode_from.exists() and mode_from.stat().st_mode & stat.S_IXUSR:
             dest.chmod(dest.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
@@ -604,6 +626,7 @@ def write_release(root: Path, out: Path, plan: dict | None = None) -> dict:
 
     obsidian_done = False
     release_edits = load_release_edits(root)
+    vocabulary = load_vocabulary(root)
     for rel, (action, rid, via) in sorted(plan["files"].items()):
         src = root / rel
         if action == "drop":
