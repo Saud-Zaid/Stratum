@@ -1014,7 +1014,7 @@ wheels = [
 
 [[package]]
 name = "stratum"
-version = "1.0.0b2"
+version = "1.0.0b3"
 source = { editable = "." }
 dependencies = [
     { name = "markdown-it-py" },

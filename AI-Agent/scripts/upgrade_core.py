@@ -43,6 +43,7 @@ from pathlib import Path, PurePosixPath
 
 RELEASE_DIR = ".vault-release"
 INSTALLED = f"{RELEASE_DIR}/installed.json"
+MANIFEST_NAME = "release_manifest.json"
 EXECUTABLE_FILES = frozenset({".githooks/pre-commit", "setup.sh", "AI-Agent/vault-python"})
 POLICIES = {"replace", "merge", "union", "json-merge", "add-only", "keep"}
 ALLOWED_HOSTS = ("github.com", "objects.githubusercontent.com", "release-assets.githubusercontent.com")
@@ -408,6 +409,18 @@ def make_backup(root: Path, paths: list[str], added: list[str], version_before: 
     return z
 
 
+def _prune_empty_parents(root: Path, rel: str) -> None:
+    """After a file was removed upstream, remove the folders it leaves empty (never the vault root, never a folder that still holds anything)."""
+    d = (root / rel).parent
+    root = root.resolve()
+    while d.resolve() != root and root in d.resolve().parents:
+        try:
+            d.rmdir()
+        except OSError:
+            return
+        d = d.parent
+
+
 def run_upgrade(root: Path, src: Source, dry_run=False, ack=False, no_sync=True, skip_verify=True, out=print) -> int:
     man = src.manifest
     installed = read_installed(root)
@@ -435,6 +448,8 @@ def run_upgrade(root: Path, src: Source, dry_run=False, ack=False, no_sync=True,
         out(f"UPGRADE stopped: {len(items)} breaking change(s) to review in {RELEASE_DIR}/pending-review.json; run again with --ack")
         return 1
     changed = [r for k, r, _, _ in p["acts"] if k in ("update", "delete")]
+    if (root / MANIFEST_NAME).is_file():
+        changed.append(MANIFEST_NAME)                   # the installed copy of the manifest moves with the files: back it up too
     added = [r for k, r, _, _ in p["acts"] if k == "add"]
     renames = [st for m in chain(man, from_v) for st in m["steps"]]
     changed += [st["from"] for st in renames if st["op"] == "rename"] + [st["path"] for st in renames if st["op"] == "delete"]
@@ -456,6 +471,7 @@ def run_upgrade(root: Path, src: Source, dry_run=False, ack=False, no_sync=True,
     for kind, rel, data, _ in p["acts"]:
         if kind == "delete":
             (root / rel).unlink()
+            _prune_empty_parents(root, rel)
         else:
             write_atomic(root / rel, data, executable=(rel in EXECUTABLE_FILES))
     _park(root, p)
@@ -465,6 +481,10 @@ def run_upgrade(root: Path, src: Source, dry_run=False, ack=False, no_sync=True,
         if rel in new_installed["files"] and installed:
             new_installed["files"][rel] = installed["files"].get(rel, new_installed["files"][rel])
     write_atomic(root / INSTALLED, (json.dumps(new_installed, indent=2) + "\n").encode("utf-8"))
+    try:
+        write_atomic(root / MANIFEST_NAME, src.read(MANIFEST_NAME))   # an upgraded tree must not keep the old release's manifest (stale file list and version)
+    except UpgradeError:
+        pass
     for rel, e in man["files"].items():                           # the base of the next three-way merge
         if e["policy"] == "merge" and (root / rel).is_file() and not any(c[0] == rel for c in p["conflicts"]):
             write_atomic(root / RELEASE_DIR / "base" / rel, src.read(rel))

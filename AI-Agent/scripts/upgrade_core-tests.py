@@ -348,6 +348,19 @@ ok("S4d-clone-without-installed-json-upgrades-and-reports-the-owner-edit-as-a-co
    json.loads((_clone / U.INSTALLED).read_text(encoding="utf-8"))["version"] == "1.0.0-beta.2", (_rc, _o[-300:]))
 ok("S4e-and-keeps-the-owner-edit-as-a-conflict-not-an-overwrite", read(_clone, "b.md") == "b edited by the owner\n", read(_clone, "b.md"))
 
+# a file removed upstream leaves no empty folder behind, and a folder that still holds a local file stays
+_o_src, _o_dir = release("1.0.0-beta.1", {"keep.md": ("k\n", "replace"), "gone/a.md": ("a\n", "replace"), "deep/er/b.md": ("b\n", "replace"), "mixed/c.md": ("c\n", "replace")})
+_o_root = tmp()
+for _f in ("keep.md", "gone/a.md", "deep/er/b.md", "mixed/c.md", "release_manifest.json"):
+    (_o_root / _f).parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy(_o_dir / _f, _o_root / _f)
+(_o_root / "mixed" / "mine.md").write_text("my own note\n", encoding="utf-8")
+_n_src, _ = release("1.0.0-beta.2", {"keep.md": ("k\n", "replace")})
+_rc, _o = up(_o_root, _n_src)
+ok("S4f-removed-upstream-files-leave-no-empty-folders", _rc == 0 and not (_o_root / "gone").exists() and not (_o_root / "deep").exists(), (_rc, _o[-200:], sorted(p.name for p in _o_root.iterdir())))
+ok("S4g-a-folder-holding-a-local-file-is-kept", (_o_root / "mixed" / "mine.md").is_file() and not (_o_root / "mixed" / "c.md").exists())
+ok("S4h-the-installed-manifest-becomes-the-new-release-manifest", json.loads((_o_root / "release_manifest.json").read_text(encoding="utf-8"))["version"] == "1.0.0-beta.2", (_o_root / "release_manifest.json").read_text(encoding="utf-8")[:80])
+
 failed = [r for r in R if not r[1]]
 for name, passed, got in R:
     print(("PASS " if passed else "FAIL ") + name + ("" if passed else f" -> {got}"))

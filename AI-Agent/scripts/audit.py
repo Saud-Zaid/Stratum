@@ -497,6 +497,8 @@ def deferral_findings(path_rel: str, text: str, fm: dict) -> list[tuple]:
     tags = fm.get("tags")
     tags = {str(t) for t in tags} if isinstance(tags, list) else ({str(tags)} if tags else set())
     spec_file = bool(tags & DEF_SPEC_TAGS) and not path_rel.startswith("04-Archive/")
+    if not spec_file and not path_rel.startswith("04-Archive/") and "[id::" not in text:
+        return out   # nothing below can fire: DEF-untracked needs a spec file, DEF-archived an archive path, the other three a deferral id
     para = {"start": 0, "word": False, "id": False}
 
     def add(rule, line, key, detail):

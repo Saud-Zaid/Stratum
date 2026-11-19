@@ -19,6 +19,7 @@ Exit code: 0 done or already in that state, 1 the plugin is not installed or a f
 from __future__ import annotations
 
 import argparse
+import re
 import json
 import os
 import secrets
@@ -186,6 +187,15 @@ def status(root: Path, out=print) -> int:
     tok = current_token(data) if isinstance(data, dict) else None
     out(f"installed: {(root / MANIFEST_REL).is_file()}  enabled: {PLUGIN_ID in enabled}  token: {tok['id'] if tok else 'none'}  "
         f".mcp.json: {SERVER_NAME in ((mcp or {}).get('mcpServers') or {})}")
+    entry = ((mcp or {}).get("mcpServers") or {}).get(SERVER_NAME)
+    if isinstance(entry, dict) and isinstance(entry.get("url"), str):
+        m = re.search(r":(\d{2,5})(?:/|$)", entry["url"])
+        cfg_port = int(m.group(1)) if m else None
+        live = ((data.get("mcpTransport") or {}) if isinstance(data, dict) else {}).get("livePort")
+        live = live if isinstance(live, int) and not isinstance(live, bool) else None
+        out(f"port: .mcp.json {cfg_port}  plugin last bound {live if live is not None else 'unknown'}")
+        if cfg_port is not None and live is not None and cfg_port != live:
+            out(f"WARNING: .mcp.json points at port {cfg_port} but the plugin last bound {live}; run enable_mcp.py again to refresh it")
     return 0
 
 
