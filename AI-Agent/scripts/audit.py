@@ -1060,11 +1060,9 @@ def main():
             # The store holds only pure parse products. They depend on the text, the profile, the frontmatter schema
             # and the code that produced them (M04 F2); findings are never cached, so a cached run equals a no-cache run.
             _code_fp = code_fingerprint(Path(__file__))
-            invalidated = audit_cache_fingerprint_check(
-                db_conn,
-                profile_sha1=file_sha1(VAULT / PROFILE_REL),
-                schema_sha1=file_sha1(VAULT / SCHEMA_FILE),
-                code_sha1=_code_fp)
+            from _vaultlib import retry_locked
+            _pf, _sf = file_sha1(VAULT / PROFILE_REL), file_sha1(VAULT / SCHEMA_FILE)
+            invalidated = retry_locked(lambda: audit_cache_fingerprint_check(db_conn, profile_sha1=_pf, schema_sha1=_sf, code_sha1=_code_fp))
             cached_rows = {row[0]: (row[1], row[2]) for row in db_conn.execute("SELECT path, blob_sha1, doc_meta_json FROM audit_cas_cache")}
         except Exception as exc:
             reason = f"{type(exc).__name__}: {exc}".replace("\n", " ")[:160]
