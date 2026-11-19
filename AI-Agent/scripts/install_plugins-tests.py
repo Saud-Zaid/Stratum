@@ -121,8 +121,23 @@ try:
     p.write_text(json.dumps(lock), encoding="utf-8")
     ok("T17-a-valid-lock-loads", IP.load_lock(p)["plugins"].keys() == {"demo"})
 
+    _orig_rep, _tries = os.replace, [0]
+    def _flaky_rep_ip(a, b):
+        _tries[0] += 1
+        if _tries[0] < 3:
+            raise PermissionError("busy")
+        return _orig_rep(a, b)
+    _rt = vault()
+    try:
+        os.replace = _flaky_rep_ip
+        IP.write_atomic(_rt / "f.bin", b"abc", retries=4, sleeper=lambda _: None)
+    finally:
+        os.replace = _orig_rep
+    ok("T17b-write-atomic-retries-permission-error",
+       _tries[0] == 3 and (_rt / "f.bin").read_bytes() == b"abc" and not list(_rt.glob(".install-*")))
+
     def cli(*a, root=None):
-        return subprocess.run([sys.executable, str(HERE / "install_plugins.py"), *a], capture_output=True, text=True, env=dict(os.environ, VAULT=str(root or v)), timeout=60)
+        return subprocess.run([sys.executable, str(HERE / "install_plugins.py"), *a], capture_output=True, text=True, encoding="utf-8", errors="replace", env=dict(os.environ, VAULT=str(root or v)), timeout=60)
     ok("T18-cli-check-exit-codes", cli("--check", "--lock", str(p), root=v5).returncode == 1 and cli("--check", "--lock", str(p), root=v).returncode == 0, cli("--check", "--lock", str(p), root=v).stdout[-120:])
     ok("T19-cli-help-rc0-unknown-flag-rc2-broken-lock-rc2", cli("--help").returncode == 0 and cli("--bogus").returncode == 2 and cli("--lock", str(v / "nope.json")).returncode == 2)
 finally:

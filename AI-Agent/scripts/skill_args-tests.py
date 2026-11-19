@@ -19,7 +19,7 @@ def ok(name, cond, got=""):
 
 def run(*argv):
     p = subprocess.run([sys.executable, str(Path(S.__file__).resolve()), *argv],
-                       capture_output=True, text=True)
+                       capture_output=True, text=True, encoding="utf-8", errors="replace")
     return p.returncode, p.stdout, p.stderr
 
 

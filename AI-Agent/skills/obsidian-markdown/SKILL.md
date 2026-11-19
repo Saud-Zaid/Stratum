@@ -22,7 +22,7 @@ This skill teaches agents how to create and edit valid Obsidian Flavored Markdow
 
 1. **Frontmatter Properties:** Always include valid YAML properties (`created`, `tags`, etc.) at the top of the file conforming to `AI-Agent/schema/frontmatter.yaml`.
 2. **Body Structure:** Structure content using hierarchical headings (H1 for title, H2 for main sections, H3 for leaf topics). Maintain global heading uniqueness (Rule R1-dup).
-3. **Internal Links (Wikilinks):** Use `[[Note]]` for internal vault cross-references and standard Markdown `[label](url)` for external URLs only.
+3. **Internal Links (Wikilinks):** Use `[[Note]]` for internal vault cross-references and standard Markdown `[label](https://example.com)` for external URLs only.
 4. **Embeds:** Embed images, audio, PDFs, or other notes using `![[target]]`.
 5. **Callouts:** Highlight key notes, warnings, and tips using `> [!type]` callouts.
 6. **Validation:** Ensure closing brackets match and no unbalanced syntax exists before saving.

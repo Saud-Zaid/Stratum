@@ -253,7 +253,7 @@ def open_writer(db: Path = DB_PATH) -> sqlite3.Connection:
 
 def read_send_log(db: Path = DB_PATH) -> list[dict]:
     """Control 5 (the reading half): a read-only connection fully independent of writing."""
-    conn = sqlite3.connect(f"file:{db}?mode=ro", uri=True)
+    conn = sqlite3.connect(Path(db).resolve().as_uri() + "?mode=ro", uri=True)  # as_uri quotes spaces and writes file:///C:/ on Windows
     conn.row_factory = sqlite3.Row
     try:
         rows = conn.execute("SELECT * FROM send_log ORDER BY id").fetchall()
@@ -384,7 +384,7 @@ def verify_send_log_chain(db: Path = DB_PATH, key: bytes | None = None) -> tuple
     key = key or load_key()
     if not db.exists():
         return False, "send_log: log database missing"
-    conn = sqlite3.connect(f"file:{db}?mode=ro", uri=True)
+    conn = sqlite3.connect(Path(db).resolve().as_uri() + "?mode=ro", uri=True)  # as_uri quotes spaces and writes file:///C:/ on Windows
     conn.row_factory = sqlite3.Row
     try:
         rows = conn.execute("SELECT * FROM send_log ORDER BY id").fetchall()
@@ -405,7 +405,7 @@ def verify_send_log_chain(db: Path = DB_PATH, key: bytes | None = None) -> tuple
 def retention_report(db: Path = DB_PATH) -> dict:
     """Retention policy: archive for display, never delete — it feeds the report and removes not a single row."""
     cutoff = (datetime.now(timezone.utc) - timedelta(days=RETENTION_DAYS)).isoformat()
-    conn = sqlite3.connect(f"file:{db}?mode=ro", uri=True)
+    conn = sqlite3.connect(Path(db).resolve().as_uri() + "?mode=ro", uri=True)  # as_uri quotes spaces and writes file:///C:/ on Windows
     try:
         n = conn.execute("SELECT COUNT(*) FROM send_log WHERE ts < ? AND status='sent'",
                          (cutoff,)).fetchone()[0]

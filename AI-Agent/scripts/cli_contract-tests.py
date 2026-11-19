@@ -33,13 +33,13 @@ def ok(name, cond, got=""):
 
 
 def run(script, *args):
-    return subprocess.run([sys.executable, str(HERE / f"{script}.py"), *args], capture_output=True, text=True,
+    return subprocess.run([sys.executable, str(HERE / f"{script}.py"), *args], capture_output=True, text=True, encoding="utf-8", errors="replace",
                           env=dict(os.environ, VAULT=str(VAULT)), cwd=tempfile.gettempdir(), timeout=120)
 
 
 def snapshot():
     r = subprocess.run(["git", "-C", str(VAULT), "status", "--porcelain", "--", ".", ":(exclude)AI-Agent/state"],
-                       capture_output=True, text=True)
+                       capture_output=True, text=True, encoding="utf-8", errors="replace")
     return r.stdout
 
 
@@ -85,21 +85,21 @@ ok("find_vault outside a vault exits with a message", raised)
 # --- operational tools generalized in T-02e (jev_client, g03_session): contract + config resolution ---
 for _tool in ("archprint", "g04_search", "fx02_session_tax", "fx05_task_key", "vault_diagram", "run_tests", "install_plugins", "upgrade_core", "restore_pre_upgrade", "export_release"):
     _f = [sys.executable, str(HERE / f"{_tool}.py")]
-    _h = subprocess.run(_f + ["--help"], capture_output=True, text=True, timeout=60)
-    _b = subprocess.run(_f + ["--bogus"], capture_output=True, text=True, timeout=60)
+    _h = subprocess.run(_f + ["--help"], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=60)
+    _b = subprocess.run(_f + ["--bogus"], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=60)
     ok(f"{_tool} --help rc0 / unknown flag rc2", _h.returncode == 0 and "usage" in _h.stdout.lower() and _b.returncode == 2, (_h.returncode, _b.returncode))
 for _tool in ("jev_client", "g03_session"):
     _f = [sys.executable, str(HERE / f"{_tool}.py")]
-    _h = subprocess.run(_f + ["--help"], capture_output=True, text=True, timeout=60)
+    _h = subprocess.run(_f + ["--help"], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=60)
     ok(f"{_tool} --help rc0 with usage", _h.returncode == 0 and "usage" in _h.stdout.lower(), (_h.returncode, _h.stderr[-200:]))
 _jc = HERE / "jev_client.py"
 _cfgdir = Path(tempfile.mkdtemp())
 _env = {k: v for k, v in os.environ.items() if k not in ("JEV_MCP_PATH", "JEV_CONFIG", "XDG_CONFIG_HOME", "OPENROUTER_API_KEY")}
-_r = subprocess.run([sys.executable, str(_jc), "jev_check", "{}"], capture_output=True, text=True, timeout=60,
+_r = subprocess.run([sys.executable, str(_jc), "jev_check", "{}"], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=60,
                     env={**_env, "XDG_CONFIG_HOME": str(_cfgdir)})
 ok("jev_client without server path fails loudly naming the config it looked at",
    _r.returncode != 0 and str(_cfgdir / "goose" / "config.yaml") in _r.stderr, (_r.returncode, _r.stderr[-300:]))
-_r = subprocess.run([sys.executable, str(_jc), "jev_check", "{}"], capture_output=True, text=True, timeout=60,
+_r = subprocess.run([sys.executable, str(_jc), "jev_check", "{}"], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=60,
                     env={**_env, "JEV_MCP_PATH": str(_cfgdir / "nope.py")})
 ok("jev_client JEV_MCP_PATH to a missing file fails loudly", _r.returncode != 0 and "file missing" in _r.stderr, _r.stderr[-300:])
 _srv = _cfgdir / "srv.py"
@@ -108,11 +108,11 @@ _cfg = _cfgdir / "c.yaml"
 _cfg.write_text(f"extensions:\n  j:\n    name: Jev\n    args: ['{_srv}']\n", encoding="utf-8")
 _code = (f"import sys; sys.path.insert(0, {str(HERE)!r}); import jev_client as J; "
          f"print(J.config_path()); print(J.resolve_server_path())")
-_r = subprocess.run([sys.executable, "-c", _code], capture_output=True, text=True, timeout=60, env={**_env, "JEV_CONFIG": str(_cfg)})
+_r = subprocess.run([sys.executable, "-c", _code], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=60, env={**_env, "JEV_CONFIG": str(_cfg)})
 ok("jev_client JEV_CONFIG overrides the config location and resolves the server",
    _r.returncode == 0 and _r.stdout.split("\n")[:2] == [str(_cfg), str(_srv)], (_r.returncode, _r.stdout, _r.stderr[-200:]))
 _code = f"import sys; sys.path.insert(0, {str(HERE)!r}); import jev_client as J; J.load_api_key()"
-_r = subprocess.run([sys.executable, "-c", _code], capture_output=True, text=True, timeout=60,
+_r = subprocess.run([sys.executable, "-c", _code], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=60,
                     env={**_env, "JEV_CONFIG": str(_cfgdir / "absent.yaml")})
 ok("jev_client load_api_key with no config exits cleanly (no traceback)",
    _r.returncode != 0 and "Traceback" not in _r.stderr and "missing" in _r.stderr, _r.stderr[-300:])

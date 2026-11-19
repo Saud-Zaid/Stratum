@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -184,7 +185,16 @@ def check_ledger() -> tuple[int, str]:
 
 
 
-GOOSE_CONFIG = Path.home() / ".config" / "goose" / "config.yaml"
+def _goose_config() -> Path:
+    """Goose keeps its config in %APPDATA%\\Block\\goose\\config on Windows and ~/.config/goose elsewhere; the first existing one wins."""
+    cands = []
+    if os.environ.get("APPDATA"):
+        cands.append(Path(os.environ["APPDATA"]) / "Block" / "goose" / "config" / "config.yaml")
+    cands.append(Path.home() / ".config" / "goose" / "config.yaml")
+    return next((c for c in cands if c.exists()), cands[-1])
+
+
+GOOSE_CONFIG = _goose_config()
 
 
 def check_iso() -> tuple[int, str]:

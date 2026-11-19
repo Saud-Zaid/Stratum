@@ -268,7 +268,7 @@ def get_demo_system_diagram(theme_id: Optional[str] = None) -> str:
         {"id": "storage", "role": "knowledge", "label": "Vault Storage", "subtext": "Markdown & SQLite", "x": 730, "y": 120, "w": 200, "h": 75},
         {"id": "decision", "role": "decision", "label": "Decision Fork", "subtext": "jev_client / Ledger", "x": 380, "y": 320, "w": 220, "h": 75},
         {"id": "alerts", "role": "alert", "label": "Circuit Breaker", "subtext": "Anti-Thrashing / Tax", "x": 50, "y": 320, "w": 200, "h": 75},
-        {"id": "ui", "role": "neutral", "label": "the owner UI Cockpit", "subtext": "Headless CLI / Web", "x": 730, "y": 320, "w": 200, "h": 75},
+        {"id": "ui", "role": "neutral", "label": "Vault UI Cockpit", "subtext": "Headless CLI / Web", "x": 730, "y": 320, "w": 200, "h": 75},
     ]
     connections = [
         ("governance", "agent", "enforces contract"),

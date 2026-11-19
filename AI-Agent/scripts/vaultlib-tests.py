@@ -90,7 +90,7 @@ ok("pause: live club area parses without warning", live_w == [] and (live is Non
 
 if "--regress" in sys.argv:
     def git(*a):
-        return subprocess.run(["git", "-C", str(VAULT), *a], capture_output=True, text=True).stdout
+        return subprocess.run(["git", "-C", str(VAULT), *a], capture_output=True, text=True, encoding="utf-8", errors="replace").stdout
     revs = git("log", "--format=%H", "--", "AI-Agent/scripts/_vaultlib.py", "Claude/scripts/_vaultlib.py").split()
     old_ns = {"__name__": "_vaultlib_old"}
     has_new = subprocess.run(["git", "-C", str(VAULT), "cat-file", "-e", f"{revs[-1]}:AI-Agent/scripts/_vaultlib.py"]).returncode == 0

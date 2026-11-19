@@ -1,8 +1,10 @@
 # vault-python.ps1 - Windows twin of vault-python: resolves VAULT, the interpreter and the tokenizer cache, then runs the script.
 # Usage: AI-Agent\vault-python.ps1 AI-Agent\scripts\state.py [args]    |    AI-Agent\vault-python.ps1 --env
 $ErrorActionPreference = "Stop"
+$pyArgs = @()
+if (-not $env:PYTHONUTF8) { $env:PYTHONUTF8 = "1" }
 $here = Split-Path -Parent $PSCommandPath
-if (-not $env:VAULT) { $env:VAULT = (Resolve-Path (Join-Path $here "..")).Path }
+if (-not $env:VAULT) { $env:VAULT = (Resolve-Path -LiteralPath (Join-Path $here "..")).Path }
 
 if (-not $env:TIKTOKEN_CACHE_DIR) {
     $base = if ($env:LOCALAPPDATA) { $env:LOCALAPPDATA } else { Join-Path $HOME ".cache" }
@@ -12,7 +14,7 @@ if (-not $env:TIKTOKEN_CACHE_DIR) {
 $venvPy = Join-Path $env:VAULT ".venv\Scripts\python.exe"
 if ($env:VAULT_PYTHON) { $py = $env:VAULT_PYTHON }
 elseif (Test-Path -LiteralPath $venvPy) { $py = $venvPy }
-elseif (Get-Command py -ErrorAction SilentlyContinue) { $py = "py" ; $pyArgs = @("-3.13") }
+elseif (Get-Command py -ErrorAction SilentlyContinue) { $py = "py" ; $pyArgs = @("-3") }
 else { $py = "python" }
 
 # Lock stamp: only when the vault's own .venv is the interpreter; a stale stamp warns once and never blocks.

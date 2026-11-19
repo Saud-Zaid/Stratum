@@ -129,7 +129,7 @@ ok("T10-max-lines", len(out) == 10 and out[-1].startswith("10\t"), f"n={len(out)
 def run_section(*args):
     import subprocess as _sp
     r = _sp.run([sys.executable, str(Path(__file__).parent / "section.py"), *args],
-                capture_output=True, text=True)
+                capture_output=True, text=True, encoding="utf-8", errors="replace")
     return r
 
 import tempfile as _tf
@@ -167,6 +167,18 @@ ok("T14-all-no-bytes-line", "SECTION-BYTES" not in r.stdout, f"stdout={r.stdout[
 # T15: --bytes override works (small ceiling forces the line)
 r = run_section(_rel, "L1-40", "--bytes", "500")
 ok("T15-bytes-override", "SECTION-BYTES" in r.stdout and "ceiling=500" in r.stdout, f"stdout={r.stdout[-150:]!r}")
+
+# Fable review: only L<digits>-<digits> is a line range. Any query starting with "L" that held a dash was parsed as one,
+# so a heading such as "Live-Agent notes" could not be asked for by name (int() traceback); L0-2 printed the last line as line 0.
+_lq = _Path(_tmpdir) / "lq.md"
+_lq.write_text("# Top\nintro\n## Live-Agent notes\nlive body\n## Other\nlast line\n", encoding="utf-8")
+_lq_rel = str(_lq.relative_to(VAULT)) if str(_lq).startswith(str(VAULT)) else str(_lq)
+r = run_section(_lq_rel, "Live-Agent")
+ok("T16-heading-query-starting-with-L-and-a-dash", r.returncode == 0 and "3\t## Live-Agent notes" in r.stdout and "Traceback" not in r.stderr, f"rc={r.returncode} out={r.stdout[-120:]!r} err={r.stderr[-120:]!r}")
+r = run_section(_lq_rel, "L3-4")
+ok("T17-control-a-real-line-range-still-works", r.stdout.splitlines()[:2] == ["3\t## Live-Agent notes", "4\tlive body"], f"stdout={r.stdout!r}")
+r = run_section(_lq_rel, "L0-2")
+ok("T18-range-from-line-0-starts-at-line-1", r.stdout.splitlines()[:2] == ["1\t# Top", "2\tintro"], f"stdout={r.stdout!r}")
 
 import shutil as _sh
 _sh.rmtree(_tmpdir, ignore_errors=True)

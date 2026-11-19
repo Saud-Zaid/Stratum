@@ -30,6 +30,9 @@ markdown:
 limits:
   read_cap_bytes: 16384
   operations_md_max_tokens: 25000
+sigkey:
+  key_file: ''
+  fingerprint: ''
 scripts:
   optional_modules:
   - _locale_ar

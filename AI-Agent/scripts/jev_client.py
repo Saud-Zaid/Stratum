@@ -105,6 +105,21 @@ def load_api_key() -> None:
     sys.exit("ERROR jev-client: OPENROUTER_API_KEY not found in jev extension envs")
 
 
+def question_warnings(question: str) -> list[str]:
+    """LES-SYS-001 lint (warn only): long or multi-sentence gate questions predicted every
+    low-confidence Jev gate in a 12-question backtest (AI-Agent/fixtures/jev-gate-questions-20261117.json:
+    7/7 gates under 0.90 flagged, 1/5 at or above). Returns human-readable reasons, empty when clean."""
+    import re
+    words = len(question.split())
+    sentences = len(re.findall(r"[.;\u061b]\s", question.split("?")[0]))   # \u061b: the Arabic semicolon, as an escape (no Arabic in the script)
+    reasons = []
+    if words > 40:
+        reasons.append(f"{words} words (> 40)")
+    if sentences >= 2:
+        reasons.append(f"{sentences} sentences before the question (>= 2)")
+    return reasons
+
+
 async def main() -> None:
     if len(sys.argv) == 2 and sys.argv[1] in ("-h", "--help"):
         print(__doc__)
@@ -119,7 +134,7 @@ async def main() -> None:
         import sqlite3
         if not ledger.is_file():
             sys.exit(f"ERROR jev-client: ledger missing at {ledger} — record the previous gate first (no gate before ledger)")
-        conn = sqlite3.connect(f"file:{ledger}?mode=ro", uri=True)
+        conn = sqlite3.connect(ledger.resolve().as_uri() + "?mode=ro", uri=True)
         rows = conn.execute(
             "SELECT id, ts, kind, substr(title, 1, 80) FROM decisions ORDER BY id DESC LIMIT 5"
         ).fetchall()
@@ -135,6 +150,11 @@ async def main() -> None:
         args = json.loads(args_json)
     except json.JSONDecodeError as e:
         sys.exit(f"ERROR jev-client: args not valid JSON: {e}")
+    if tool_name == "jev_gate" and isinstance(args, dict):
+        warn = question_warnings(str(args.get("question", "")))
+        if warn:  # stderr only: the output and the exit code stay unchanged (contract tests)
+            print("WARN jev-client LES-SYS-001: compound-risk gate question: " + "; ".join(warn)
+                  + " — split it into one fact-based question", file=sys.stderr)
 
     # Loud infrastructure checks BEFORE any optional-library import: a broken
     # environment must be reported as an error, never as a silent transport

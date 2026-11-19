@@ -63,11 +63,11 @@ This skill defines the mandatory write invariants for modifying or creating note
 ### 6. Post-Write Verification
 - Verify every non-trivial write by inspecting the targeted section:
   ```bash
-  python3 AI-Agent/scripts/section.py "<relative_path>" "<heading_title>"
+  .venv/bin/python AI-Agent/scripts/section.py "<relative_path>" "<heading_title>"
   ```
 - After renaming any heading, run:
   ```bash
-  python3 AI-Agent/scripts/audit.py --check links
+  .venv/bin/python AI-Agent/scripts/audit.py --check links
   ```
   to verify that incoming wikilinks were properly resolved (TR-0017 / TR-0021).
 

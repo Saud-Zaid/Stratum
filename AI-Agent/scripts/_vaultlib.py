@@ -8,7 +8,10 @@ import bisect
 import copy
 import os
 import re
+import subprocess
 import sys
+import time
+import unicodedata
 from datetime import date
 from functools import lru_cache
 from pathlib import Path
@@ -20,6 +23,49 @@ from mdit_py_plugins.front_matter import front_matter_plugin
 
 VAULT = Path(os.environ.get("VAULT") or Path(__file__).resolve().parents[2])   # the checkout this script lives in, unless VAULT says otherwise
 SKIP_DIRS = {".git", ".obsidian", ".trash", "node_modules", ".venv", ".vault-release"}
+
+# ADR-006 import policy, one copy for audit.py and impact.py (AD13 E7: the two copies had drifted, `mediator` was allowed by one only)
+ALLOWED_THIRD_PARTY = {"_vaultlib", "markdown_it", "mdit_py_plugins", "yaml", "tiktoken", "mcp"}    # ADR-006 as amended by ADR-009 (tiktoken) and ADR-020 (mcp<2)
+# ADR-021: libraries allowed for ONE named script only (stem -> set). Every other script still gets the global list above.
+SCRIPT_THIRD_PARTY: dict[str, set[str]] = {}   # per-script third-party libraries: none in this release
+SCHEMA_UNITS = {"decision_ledger", "mediator"}    # schema/ units are vault-local; read-only consumers may import them (ADR-006 as amended 2026-10-19)
+
+
+DYNAMIC_IMPORT_CALLS = ("import_module", "__import__", "optional_module")
+
+
+def script_import_roots(src: str, fallback: bool = True, dynamic: bool = False):
+    """Top-level module names a script imports, from real import statements (a docstring line starting with "from" is prose).
+    A syntax error returns a line-regex guess when `fallback`, else None so the caller can report the parse failure itself.
+    `dynamic`: also the names given as a string literal to importlib.import_module, __import__ or optional_module (deptry's
+    DEP001 does not see these either; a computed name cannot be seen by anything)."""
+    import ast as _ast
+    try:
+        tree = _ast.parse(src)
+    except SyntaxError:
+        if not fallback:
+            return None
+        return {m.split(".")[0] for m in re.findall(r"^\s*(?:from|import)\s+([A-Za-z_][\w.]*)", src, re.M)}
+    mods = set()
+    for n in _ast.walk(tree):
+        if isinstance(n, _ast.Import):
+            mods.update(a.name.split(".")[0] for a in n.names)
+        elif isinstance(n, _ast.ImportFrom) and n.module and not n.level:
+            mods.add(n.module.split(".")[0])
+        elif dynamic and isinstance(n, _ast.Call) and n.args and isinstance(n.args[0], _ast.Constant) and isinstance(n.args[0].value, str):
+            fn = n.func
+            if (fn.attr if isinstance(fn, _ast.Attribute) else (fn.id if isinstance(fn, _ast.Name) else "")) in DYNAMIC_IMPORT_CALLS and n.args[0].value:
+                mods.add(n.args[0].value.split(".")[0])
+    return mods
+
+
+def unapproved_imports(mods, local_stems, optional=(), script=None) -> list:
+    """Modules outside stdlib, the pinned libraries, sibling scripts, schema units, the profile's optional modules
+    and the per-script libraries of SCRIPT_THIRD_PARTY for `script` (a stem; ADR-021)."""
+    stdlib = set(getattr(sys, "stdlib_module_names", set()))
+    own = SCRIPT_THIRD_PARTY.get(script, set())
+    return sorted(m for m in mods if m not in stdlib and m not in ALLOWED_THIRD_PARTY and m not in local_stems
+                  and m not in SCHEMA_UNITS and m not in optional and m not in own)
 
 try:
     import _locale_ar as _LOC          # the mother vault's Arabic tables; a release ships none of them
@@ -40,6 +86,8 @@ def alternation(words) -> str:
 
 _TASHKEEL = re.compile(r"[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED\u0640]")
 _MAP = str.maketrans(locale_value("NORMALIZE", {}))
+_INVISIBLE = re.compile("[\u200b-\u200d\u2060\ufeff]")           # ZWSP, ZWNJ, ZWJ, word joiner, BOM
+_PERSIAN = str.maketrans(locale_value("PERSIAN_FOLD", {}))     # Persian kaf, yeh -> Arabic kaf, yeh (AD13 B3); the table is in _locale_ar
 _MD = MarkdownIt("commonmark").enable("table").use(front_matter_plugin)
 _OBS_COMMENT = re.compile(r"%%.*?%%", re.S)
 
@@ -70,7 +118,10 @@ class Doc(NamedTuple):
 
 def normalize_ar(text: str) -> str:
     """Normalize Arabic spelling variants + casefold, for matching only (never for writing back)."""
-    return _TASHKEEL.sub("", text).translate(_MAP).casefold()
+    if os.environ.get("STRATUM_NORMALIZE_EXTRA") == "0":   # kill switch for the AD13 B3 additions
+        return _TASHKEEL.sub("", text).translate(_MAP).casefold()
+    text = _INVISIBLE.sub("", unicodedata.normalize("NFKC", text))   # NFKC folds presentation forms and the lam-alef ligature
+    return _TASHKEEL.sub("", text).translate(_PERSIAN).translate(_MAP).casefold()
 
 
 def is_readme(path) -> bool:
@@ -82,7 +133,7 @@ def iter_md(prefix: str = "", include_readme: bool = False) -> Iterator[Path]:
     for dirpath, dirnames, filenames in os.walk(VAULT / prefix):
         dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
         for f in filenames:
-            if f.endswith(".md") and (include_readme or not is_readme(f)):
+            if f.endswith(".md") and (include_readme or not is_readme(f)) and (Path(dirpath) / f).is_file():   # a dangling symlink is not a note
                 yield Path(dirpath) / f
 
 
@@ -120,6 +171,75 @@ def _mask_obsidian_comments(text: str, protected: set) -> str:
     return "".join(parts)
 
 
+_YAML_LOADER = getattr(yaml, "CSafeLoader", yaml.SafeLoader)   # libyaml when the install has it (about 8x faster on the audit's hot path), the pure-Python loader otherwise
+
+
+def _yaml_load(text: str):
+    """yaml.safe_load with the fastest safe loader available; same results and the same yaml.YAMLError family."""
+    return yaml.load(text, Loader=_YAML_LOADER)
+
+
+def load_frontmatter(fm_raw: str) -> tuple[dict, str]:
+    """(mapping, error) of a front matter block. The single place that turns the raw block into values, shared by
+    parse() and by the audit cache, so a cached document equals a freshly parsed one by construction."""
+    fm, fm_error = {}, ""
+    try:
+        loaded = _yaml_load(fm_raw) if fm_raw.strip() else {}
+        if isinstance(loaded, dict):
+            fm = loaded
+        elif loaded is not None:
+            fm_error = "front matter is not a mapping"
+    except yaml.YAMLError as e:
+        fm_error = str(e).splitlines()[0]
+    except ValueError as e:   # PyYAML builds dates itself: `due: 2026-11-31` raises ValueError, not YAMLError
+        fm_error = f"invalid date or time value: {e}"
+    return fm, fm_error
+
+
+def doc_to_meta(d: "Doc") -> dict:
+    """The JSON-safe parse products of a note. The front matter VALUES are not stored: YAML values (dates, datetimes,
+    sets, non-string keys) do not survive JSON, so the raw block is stored and re-read with load_frontmatter."""
+    return {
+        "total_lines": d.total_lines,
+        "body_start": d.body_start,
+        "has_fm": d.has_fm,
+        "fm_raw": d.fm_raw,
+        "headings": [(h.line, h.level, h.title, h.plain, h.has_code, h.nested, h.setext) for h in d.headings],
+        "nested_headings": [(h.line, h.level, h.title, h.plain, h.has_code, h.nested, h.setext) for h in d.nested_headings],
+        "table_lines": sorted(d.table_lines),
+        "code_lines": sorted(d.code_lines),
+    }
+
+
+def doc_from_meta(meta: dict) -> "Doc":
+    """Rebuild a Doc from doc_to_meta output (after a JSON round trip). Tokens are not kept."""
+    fm, fm_error = load_frontmatter(meta["fm_raw"]) if meta["has_fm"] else ({}, "")
+    return Doc(meta["total_lines"], bool(meta["has_fm"]), meta["fm_raw"], fm, fm_error, meta["body_start"], [],
+               [Heading(*h) for h in meta["headings"]], [Heading(*h) for h in meta["nested_headings"]],
+               frozenset(meta["code_lines"]), frozenset(meta["table_lines"]))
+
+
+def invalid_utf8(path) -> bool:
+    """True when the file's bytes are not valid UTF-8 (read() replaces them silently, so the audit reports it)."""
+    try:
+        Path(path).read_bytes().decode("utf-8")
+        return False
+    except UnicodeDecodeError:
+        return True
+
+
+def broken_md_symlinks(prefix: str = "") -> list[str]:
+    """Relative paths of `*.md` symlinks whose target does not exist (iter_md skips them; the audit reports them)."""
+    out = []
+    for dirpath, dirnames, filenames in os.walk(VAULT / prefix):
+        dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
+        for f in filenames:
+            p = Path(dirpath) / f
+            if f.endswith(".md") and p.is_symlink() and not p.exists():
+                out.append(p.relative_to(VAULT).as_posix())
+    return sorted(out)
+
+
 @lru_cache(maxsize=512)
 def parse(text: str) -> Doc:
     tokens = _MD.parse(text)
@@ -134,14 +254,7 @@ def parse(text: str) -> Doc:
     for i, t in enumerate(tokens):
         if t.type == "front_matter":
             has_fm, fm_raw, body_start = True, t.content, t.map[1] + 1
-            try:
-                loaded = yaml.safe_load(fm_raw) if fm_raw.strip() else {}
-                if isinstance(loaded, dict):
-                    fm = loaded
-                elif loaded is not None:
-                    fm_error = "front matter is not a mapping"
-            except yaml.YAMLError as e:
-                fm_error = str(e).splitlines()[0]
+            fm, fm_error = load_frontmatter(fm_raw)
         elif t.type == "heading_open":
             inline = tokens[i + 1]
             kids = inline.children or []
@@ -168,9 +281,9 @@ def frontmatter(text: str) -> dict:
 
 def frontmatter_keys(fm_raw: str) -> list[str]:
     try:
-        loaded = yaml.safe_load(fm_raw) if fm_raw.strip() else {}
+        loaded = _yaml_load(fm_raw) if fm_raw.strip() else {}
         return list(loaded.keys()) if isinstance(loaded, dict) else []
-    except yaml.YAMLError:
+    except (yaml.YAMLError, ValueError):   # ValueError: an impossible date value
         return [m.group(1) for m in re.finditer(r"^([^\s:#][^:]*):", fm_raw, re.M)]
 
 
@@ -194,9 +307,10 @@ def sections(text: str) -> list[tuple[int, str, int, int]]:
     return out
 
 
-def leaf_sections(text: str) -> list[dict]:
-    """Own content of each heading (until the next heading of ANY level): bytes, lines and table/code share."""
-    d = parse(text)
+def leaf_sections(text: str, d=None) -> list[dict]:
+    """Own content of each heading (until the next heading of ANY level): bytes, lines and table/code share.
+    `d` is the already parsed document of the same text (the audit passes it, so the note is parsed once)."""
+    d = d if d is not None else parse(text)
     lines = text.splitlines(keepends=True)
     total = len(lines)
     out = []
@@ -210,14 +324,28 @@ def leaf_sections(text: str) -> list[dict]:
     return out
 
 
+_INLINE_MEMO: dict[str, list[tuple[int, str]]] = {}   # text -> its inline prose; a pure function of the text, so safe to reuse
+
+
+def preload_inline(text: str, items) -> None:
+    """Seed the memo from the persisted parse products (audit cache) so a warm run never tokenizes the note again."""
+    _INLINE_MEMO[text] = [(int(line), s) for line, s in items]
+
+
 def inline_texts(text: str) -> Iterator[tuple[int, str]]:
-    """Yield (line_1based, prose) for every inline block, with code spans removed and line breaks kept as \\n."""
-    for t in parse(text).tokens:
-        if t.type == "inline" and t.map:
-            s = "".join(c.content if c.type == "text" else "\n" for c in (t.children or [])
-                        if c.type in ("text", "softbreak", "hardbreak"))
-            if s.strip():
-                yield t.map[0] + 1, s
+    """Yield (line_1based, prose) for every inline block, with code spans removed and line breaks kept as \\n.
+    Memoized per text: the same note is asked for several times in one run."""
+    items = _INLINE_MEMO.get(text)
+    if items is None:
+        items = []
+        for t in parse(text).tokens:
+            if t.type == "inline" and t.map:
+                s = "".join(c.content if c.type == "text" else "\n" for c in (t.children or [])
+                            if c.type in ("text", "softbreak", "hardbreak"))
+                if s.strip():
+                    items.append((t.map[0] + 1, s))
+        _INLINE_MEMO[text] = items
+    yield from items
 
 
 CLUB_AREA: str | None = locale_value("CLUB_AREA")   # None in a release: no club area
@@ -269,19 +397,48 @@ def pause_window(text: str | None = None, warnings: list | None = None) -> Pause
     return found[0] if len(found) == 1 and not bad else None
 
 
-INDEX_DB_PATH = VAULT / "AI-Agent" / "state" / "vault-index.sqlite3"
+# VAULT_INDEX_DB redirects the derived store (tests, a read-only checkout); the default sits under the vault's state folder.
+INDEX_DB_PATH = Path(os.environ["VAULT_INDEX_DB"]) if os.environ.get("VAULT_INDEX_DB") else VAULT / "AI-Agent" / "state" / "vault-index.sqlite3"
+# Bump when the tables below change shape. The store is derived data, so a mismatch rebuilds it (AD13 M04, derived-cache standard).
+INDEX_SCHEMA_VERSION = 2
+
+
+def _open_index(p: Path) -> Any:
+    import sqlite3
+    conn = sqlite3.connect(str(p), timeout=5.0)
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA busy_timeout=5000;")
+    conn.execute("PRAGMA journal_mode=WAL;")
+    conn.execute("PRAGMA synchronous=NORMAL;")
+    return conn
 
 
 def get_vault_index_db(db_path: Path | None = None) -> Any:
-    """Return an open SQLite connection to the unified vault-index database with WAL mode."""
+    """Open the derived vault-index store (SQLite, WAL). The store is disposable: an unreadable file or a
+    schema version other than INDEX_SCHEMA_VERSION is deleted and rebuilt, with a warning on stderr, never read.
+    A store that cannot be opened at all raises, so the caller can say so loudly and run without it."""
     import sqlite3
-    p = db_path or INDEX_DB_PATH
+    p = Path(db_path) if db_path else INDEX_DB_PATH
     p.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(str(p), timeout=5.0)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode=WAL;")
-    conn.execute("PRAGMA synchronous=NORMAL;")
-    conn.execute("PRAGMA busy_timeout=5000;")
+    why = ""
+    try:
+        conn = _open_index(p)
+        version = conn.execute("PRAGMA user_version").fetchone()[0]
+        has_tables = conn.execute("SELECT COUNT(*) FROM sqlite_master WHERE type = 'table'").fetchone()[0] > 0
+        if version == INDEX_SCHEMA_VERSION or (version == 0 and not has_tables):
+            _init_index_schema(conn)
+            return conn
+        why = f"schema version {version}, expected {INDEX_SCHEMA_VERSION}"
+        conn.close()
+    except sqlite3.DatabaseError as exc:
+        why = f"{type(exc).__name__}: {exc}"
+    print(f"WARN vault-index: store at {p} rebuilt ({why})", file=sys.stderr)
+    for suffix in ("", "-wal", "-shm"):
+        try:
+            Path(str(p) + suffix).unlink()
+        except FileNotFoundError:
+            pass
+    conn = _open_index(p)
     _init_index_schema(conn)
     return conn
 
@@ -315,20 +472,83 @@ def _init_index_schema(conn: Any) -> None:
             value TEXT NOT NULL
         );
     """)
+    conn.execute(f"PRAGMA user_version = {INDEX_SCHEMA_VERSION}")
     conn.commit()
 
 
-def invalidate_audit_cache_if_stale(conn: Any, **fingerprints: str) -> bool:
-    """Drop every audit_cas_cache row when any stored fingerprint (profile_sha1, schema_sha1, ...) differs
-    from the current one, then store the current ones. True when the cache was invalidated.
-    The first run (nothing stored) counts as stale: a cache of unknown provenance is not trusted."""
+def audit_cache_fingerprint_check(conn: Any, **fingerprints: str) -> list[str]:
+    """Drop every cached audit row when any stored fingerprint differs from the current one, store the current ones,
+    and return the names of the fingerprints that differed (empty list = cache kept). The first run (nothing stored)
+    counts as stale: a cache of unknown provenance is not trusted. The ADR import cache is dropped with it."""
     stored = dict(conn.execute("SELECT key, value FROM cache_meta").fetchall())
-    stale = any(stored.get(k) != v for k, v in fingerprints.items())
-    if stale:
+    changed = [k for k, v in fingerprints.items() if stored.get(k) != v]
+    if changed:
         conn.execute("DELETE FROM audit_cas_cache")
+        if conn.execute("SELECT 1 FROM sqlite_master WHERE name = 'adr_py_cache'").fetchone():
+            conn.execute("DELETE FROM adr_py_cache")
         conn.executemany("INSERT OR REPLACE INTO cache_meta (key, value) VALUES (?, ?)", list(fingerprints.items()))
         conn.commit()
-    return stale
+    return changed
+
+
+def invalidate_audit_cache_if_stale(conn: Any, **fingerprints: str) -> bool:
+    """True when the cache was invalidated (see audit_cache_fingerprint_check)."""
+    return bool(audit_cache_fingerprint_check(conn, **fingerprints))
+
+
+def code_fingerprint(entry: Path, extra: tuple = ()) -> str:
+    """sha1 over the producing code: the entry script, every local script it imports (transitively, found with ast),
+    plus the extra modules named by the caller and the literals of optional_module / import_module / __import__ calls, the interpreter minor version
+    and the versions of the parsing libraries. Any edit changes it, so a cached result never outlives the code that made it."""
+    import ast
+    import hashlib
+    from importlib import metadata
+    entry = Path(entry).resolve()
+    local = {q.stem: q for q in entry.parent.glob("*.py")}
+    seen: dict[str, bytes] = {}
+    stack = [entry.stem, *extra]
+    while stack:
+        name = stack.pop()
+        if name in seen or name not in local:
+            continue
+        data = local[name].read_bytes()
+        seen[name] = data
+        try:
+            tree = ast.parse(data)
+        except SyntaxError:
+            continue
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                stack.extend(a.name.split(".")[0] for a in node.names)
+            elif isinstance(node, ast.ImportFrom) and node.module and node.level == 0:
+                stack.append(node.module.split(".")[0])
+            elif isinstance(node, ast.Call) and node.args and isinstance(node.args[0], ast.Constant) and isinstance(node.args[0].value, str):
+                fn = node.func   # modules imported by name at run time: optional_module("x"), importlib.import_module("x"), __import__("x")
+                called = fn.attr if isinstance(fn, ast.Attribute) else (fn.id if isinstance(fn, ast.Name) else "")
+                if called in ("optional_module", "import_module", "__import__"):
+                    stack.append(node.args[0].value.split(".")[0])
+    h = hashlib.sha1()
+    for name in sorted(seen):
+        h.update(name.encode("utf-8") + b"\0" + seen[name] + b"\0")
+    libs = []
+    for dist in ("markdown-it-py", "mdit-py-plugins", "PyYAML"):
+        try:
+            libs.append(f"{dist}={metadata.version(dist)}")
+        except Exception:
+            libs.append(f"{dist}=?")
+    h.update(("py%d.%d;" % sys.version_info[:2] + ";".join(libs)).encode("utf-8"))
+    return h.hexdigest()
+
+
+def scrub_git_env() -> list[str]:
+    """Remove every GIT_* variable from this process's environment and return their names.
+    A git hook runs with GIT_DIR, GIT_INDEX_FILE and friends set; a test that creates a temporary repository must not
+    inherit them, or `git init` writes into the real repository's config (this corrupted core.bare and core.worktree of
+    the main repository during AD13, 2026-11-13). Every test that spawns git repositories calls this first."""
+    removed = [k for k in os.environ if k.startswith("GIT_")]
+    for k in removed:
+        del os.environ[k]
+    return removed
 
 
 def file_sha1(path: Path) -> str:
@@ -355,6 +575,7 @@ _PROFILE_DEFAULTS = {
     "markdown": {"md024_siblings_only_files": []},
     "limits": {"read_cap_bytes": 0, "operations_md_max_tokens": 0},
     "scripts": {"optional_modules": []},   # sibling modules a release does not ship; ADR-006 does not count them as foreign imports
+    "sigkey": {"key_file": "", "fingerprint": ""},
 }
 
 
@@ -578,7 +799,51 @@ SECRET_PATTERNS = [
     ("glpat-[A-Za-z0-9_-]{20,}", "GitLab token"),
     ("xox[baprs]-[A-Za-z0-9-]{10,}", "Slack token"),
     ("-----BEGIN (RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----", "private key block"),
+    # AD13 D7 (HS-03): appended, so the numbers of the shapes above (the SECRET-leak-N rule ids) never move
+    ("sk-[A-Za-z0-9]{32,}", "OpenAI key (legacy shape)"),
+    ("sk-or-v1-[A-Za-z0-9]{30,}", "OpenRouter key"),
+    ("AIza[0-9A-Za-z_-]{35}", "Google API key"),
+    ("[sr]k_live_[0-9A-Za-z]{20,}", "Stripe live key"),
+    (r"eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}", "JSON Web Token"),
+    (r"(?:postgres(?:ql)?|mysql|mongodb(?:\+srv)?|redis|amqp)://[^\s:/@]+:[^\s@/]{3,}@[^\s/]+", "database URL with a password"),
+    (r"https://hooks\.slack\.com/services/T[A-Z0-9]+/B[A-Z0-9]+/[A-Za-z0-9]{20,}", "Slack webhook"),
+    ("hf_[A-Za-z0-9]{30,}", "Hugging Face token"),
+    (r"SG\.[A-Za-z0-9_-]{16,}\.[A-Za-z0-9_-]{16,}", "SendGrid key"),
+    (r"\b\d{8,10}:AA[A-Za-z0-9_-]{33}\b", "Telegram bot token"),
+    ("gh[usr]_[A-Za-z0-9]{30,}", "GitHub app or refresh token"),
 ]
+# public documentation samples that look like real credentials (the jwt.io example token's signature; the Firebase docs key)
+PUBLIC_SAMPLES = ("SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c", "SyDaGmWKa4JsXZ-HjGw7ISLn_3namBGewQe")
+_SHAPES_FILE = Path(__file__).resolve().parent.parent / "schema" / "secret-shapes.json"
+_SHAPES_CACHE: list | None = None
+ADAPTED_MAX_CHARS = 200_000     # the adapted shapes skip bigger texts (generated HTML, minified bundles: half the bytes, nearly all the time); the built-in shapes read everything
+
+
+def adapted_shapes() -> list:
+    """The provider shapes adapted from gitleaks (MIT; see the file's own `source`, `license`, `changes`): a list of dicts with
+    the compiled `rx`, `id`, `name`, lowercase `kw` prefilter words and the `entropy` gate. A missing or broken file means no
+    adapted shapes, never an error: the built-in list still runs."""
+    global _SHAPES_CACHE
+    if _SHAPES_CACHE is None:
+        import json
+        import warnings
+        out = []
+        try:
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", FutureWarning)   # a Go pattern with `[[` draws a warning, not an error
+                for r in json.loads(_SHAPES_FILE.read_text(encoding="utf-8")).get("rules", []):
+                    try:
+                        out.append({"id": r["id"], "name": r["name"], "rx": re.compile(r["regex"]), "kw": [k.lower() for k in r.get("keywords") or []],
+                                    "entropy": r.get("entropy") or 0})
+                    except (KeyError, re.error, TypeError):
+                        continue
+        except Exception:                                # a scanner that cannot load its extra shapes still runs its own
+            out = []
+        _SHAPES_CACHE = out
+    return _SHAPES_CACHE
+
+
+_DOC_URL_HOST = re.compile(r"(?i)(localhost|127\.0\.0\.1|0\.0\.0\.0|:(?:pass|password|secret|user|username|postgres|root)@)")
 # CVE-2021-42574 (Trojan Source): bidirectional controls that make code read differently from what it does.
 BIDI_CONTROLS = "\u202a\u202b\u202c\u202d\u202e\u2066\u2067\u2068\u2069"
 _BIDI_RE = re.compile("[" + BIDI_CONTROLS + "]")
@@ -595,15 +860,35 @@ def shannon_entropy(s: str) -> float:
     return -sum(c / n * math.log2(c / n) for c in (s.count(ch) for ch in set(s)))
 
 
-def scan_secrets(text: str, entropy: bool = True, hidden: bool = True) -> list[tuple[str, int, str]]:
+def scan_secrets(text: str, entropy: bool = True, hidden: bool = True, placeholders_ok: bool = False) -> list[tuple[str, int, str]]:
     """Findings of one text as (kind, line, detail). kind: `pattern:<n>` (a known credential shape), `entropy` (a high-entropy
     value assigned to a key named like a secret), `bidi` (a bidirectional control character), `bom` (a byte-order mark that is
-    not the first character). Placeholders, environment references and low-entropy values are not findings."""
+    not the first character). Placeholders, environment references and low-entropy values are not findings.
+    `placeholders_ok`: a credential-shaped match that reads as a placeholder (xxxx, your, example, <...>, a localhost or
+    `:password@` database URL) is skipped too; the narrow scope keeps it off so an instruction file never hides one."""
     out: list[tuple[str, int, str]] = []
     line_of = lambda i: text.count("\n", 0, i) + 1
     for n, (pat, name) in enumerate(SECRET_PATTERNS):
         for m in re.finditer(pat, text):
+            if placeholders_ok and (_PLACEHOLDER.search(m.group(0)) or any(s in m.group(0) for s in PUBLIC_SAMPLES)
+                                    or (name.startswith("database URL") and _DOC_URL_HOST.search(m.group(0)))):
+                continue
             out.append((f"pattern:{n}", line_of(m.start()), name))
+    shapes = adapted_shapes() if len(text) <= ADAPTED_MAX_CHARS else []
+    if shapes:
+        low = text.lower()
+        seen_lines = {ln for _k, ln, _d in out}          # a token the built-in list already names is not named twice
+        for sh in shapes:
+            if sh["kw"] and not any(k in low for k in sh["kw"]):
+                continue
+            for m in sh["rx"].finditer(text):
+                ln = line_of(m.start())
+                secret = m.group(1) if m.groups() and m.group(1) else m.group(0)
+                if ln in seen_lines or (sh["entropy"] and shannon_entropy(secret) < sh["entropy"]):
+                    continue
+                if placeholders_ok and (_PLACEHOLDER.search(m.group(0)) or any(s in m.group(0) for s in PUBLIC_SAMPLES)):
+                    continue
+                out.append((f"pattern:gl-{sh['id']}", ln, f"{sh['name']} (gitleaks rule {sh['id']})"))
     if entropy:
         for m in _KEYED_VALUE.finditer(text):
             v = m.group(2)
@@ -615,6 +900,28 @@ def scan_secrets(text: str, entropy: bool = True, hidden: bool = True) -> list[t
         i = text.find("\ufeff", 1)
         if i != -1:
             out.append(("bom", line_of(i), "byte-order mark inside the text"))
+    return out
+
+
+# People data (AD13 D7, HS-03): local shapes, warn only, for the people folder (audit.people_dir(); the folder name and the Arabic
+# identity words come from _locale_ar, a release has English words only)
+_ID_CONTEXT = re.compile("(?i)(" + "|".join([*(re.escape(w) for w in locale_value("ID_CONTEXT_WORDS", ())), "national id", "iqama", "id number"]) + ")")
+_PII = [
+    ("iban", re.compile(r"\bSA\d{2}(?:[ ]?[0-9A-Z]{4}){5}\b"), "Saudi IBAN"),
+    ("mobile", re.compile(r"(?<![\d+])(?:\+?966|00966|0)5\d{8}(?!\d)"), "Saudi mobile number"),
+]
+
+
+def scan_pii(text: str) -> list[tuple[str, int, str]]:
+    """Personal-data shapes of one text as (kind, line, detail): a Saudi IBAN, a Saudi mobile number, and a ten-digit number
+    starting with 1 or 2 on a line that names an identity (hawiyya, civil registry, iqama, national id). Warn-only material."""
+    out = []
+    for n, line in enumerate(text.split("\n"), 1):
+        for kind, rx, name in _PII:
+            if rx.search(line):
+                out.append((kind, n, name))
+        if _ID_CONTEXT.search(line) and re.search(r"(?<!\d)[12]\d{9}(?!\d)", line):
+            out.append(("national-id", n, "ten-digit identity number"))
     return out
 
 
@@ -643,12 +950,31 @@ def arabic_in_python(source: str) -> list[tuple[int, str, str]]:
 TEXT_SUFFIXES = {".md", ".py", ".json", ".yaml", ".yml", ".base", ".canvas", ".js", ".css", ".html", ".sh", ".ps1", ".cmd", ".toml", ".txt", ".cff", ".mdc", ".lock"}
 
 
-def scan_tree(root, skip_dirs=(".git", ".venv", "node_modules", "__pycache__")) -> list[tuple[str, str, int, str]]:
+def _is_secret_rules_file(f: Path, root: Path, skip_files: set[str]) -> bool:
+    """True for the gitleaks detection rules catalog itself (exempted across tree/sub-tree scans), never user notes."""
+    if f.relative_to(root).as_posix() in skip_files:
+        return True
+    if f.name == "secret-shapes.json" and f.parent.name == "schema":
+        if f.parent.parent.name == "AI-Agent":
+            return True
+        try:
+            if f.resolve() == _SHAPES_FILE.resolve():
+                return True
+        except OSError:
+            pass
+    return False
+
+
+def scan_tree(root, skip_dirs=(".git", ".venv", "node_modules", "__pycache__"),
+              skip_files=("AI-Agent/schema/secret-shapes.json",)) -> list[tuple[str, str, int, str]]:
     """[(relative path, kind, line, detail)] over every text file under `root`, for the release exporter and its --check."""
     root = Path(root)
+    skip_set = set(skip_files or ())
     found = []
     for f in sorted(root.rglob("*")):
         if not f.is_file() or any(part in skip_dirs for part in f.relative_to(root).parts) or (f.suffix.lower() not in TEXT_SUFFIXES and f.name not in ("VERSION", "LICENSE")):
+            continue
+        if _is_secret_rules_file(f, root, skip_set):
             continue
         try:
             text = f.read_text(encoding="utf-8")
@@ -792,45 +1118,161 @@ def default_tiktoken_cache_dir() -> Path:
     return Path(os.environ.get("XDG_CACHE_HOME") or Path.home() / ".cache") / "tiktoken"
 
 
+def _dedup_paths(candidates: list[Path]) -> list[Path]:
+    out: list[Path] = []
+    seen: set[str] = set()
+    for p in candidates:
+        key = str(p)
+        if key not in seen:
+            seen.add(key)
+            out.append(p)
+    return out
+
+
+def goose_session_dirs(platform: str | None = None, env: dict | None = None, home: Path | None = None) -> list[Path]:
+    """Candidate Goose sessions directories in precedence order across Linux, macOS, and Windows."""
+    plat = platform if platform is not None else sys.platform
+    env_map = env if env is not None else os.environ
+    home_dir = Path(home) if home is not None else Path.home()
+    cands: list[Path] = []
+    if plat == "win32":
+        appdata = Path(env_map["APPDATA"]) if env_map.get("APPDATA") else home_dir / "AppData" / "Roaming"
+        localapp = Path(env_map["LOCALAPPDATA"]) if env_map.get("LOCALAPPDATA") else home_dir / "AppData" / "Local"
+        cands.extend([
+            appdata / "Block" / "goose" / "data" / "sessions",
+            localapp / "goose" / "sessions",
+            appdata / "goose" / "sessions",
+            home_dir / ".local" / "share" / "goose" / "sessions",
+        ])
+    elif plat == "darwin":
+        app_sup = home_dir / "Library" / "Application Support"
+        cands.extend([app_sup / "Block" / "goose" / "sessions", app_sup / "goose" / "sessions"])
+        if env_map.get("XDG_DATA_HOME"):
+            cands.append(Path(env_map["XDG_DATA_HOME"]) / "goose" / "sessions")
+        cands.append(home_dir / ".local" / "share" / "goose" / "sessions")
+    else:
+        if env_map.get("XDG_DATA_HOME"):
+            cands.append(Path(env_map["XDG_DATA_HOME"]) / "goose" / "sessions")
+        cands.append(home_dir / ".local" / "share" / "goose" / "sessions")
+    return _dedup_paths(cands)
+
+
+def goose_config_paths(platform: str | None = None, env: dict | None = None, home: Path | None = None) -> list[Path]:
+    """Candidate Goose config.yaml paths in precedence order across Linux, macOS, and Windows."""
+    plat = platform if platform is not None else sys.platform
+    env_map = env if env is not None else os.environ
+    home_dir = Path(home) if home is not None else Path.home()
+    cands: list[Path] = []
+    if plat == "win32":
+        appdata = Path(env_map["APPDATA"]) if env_map.get("APPDATA") else home_dir / "AppData" / "Roaming"
+        localapp = Path(env_map["LOCALAPPDATA"]) if env_map.get("LOCALAPPDATA") else home_dir / "AppData" / "Local"
+        cands.extend([
+            appdata / "Block" / "goose" / "config" / "config.yaml",
+            localapp / "goose" / "config.yaml",
+            home_dir / ".config" / "goose" / "config.yaml",
+        ])
+    elif plat == "darwin":
+        cands.append(home_dir / "Library" / "Application Support" / "Block" / "goose" / "config" / "config.yaml")
+        if env_map.get("XDG_CONFIG_HOME"):
+            cands.append(Path(env_map["XDG_CONFIG_HOME"]) / "goose" / "config.yaml")
+        cands.append(home_dir / ".config" / "goose" / "config.yaml")
+    else:
+        if env_map.get("XDG_CONFIG_HOME"):
+            cands.append(Path(env_map["XDG_CONFIG_HOME"]) / "goose" / "config.yaml")
+        cands.append(home_dir / ".config" / "goose" / "config.yaml")
+    return _dedup_paths(cands)
+
+
 def session_db_path() -> Path:
-    """The agent harness's sessions.db: STRATUM_SESSION_DB, else XDG_DATA_HOME / LOCALAPPDATA, else ~/.local/share.
-    Callers open it read-only and treat a missing file as "no session data"."""
+    """The agent harness's sessions.db: STRATUM_SESSION_DB, explicit XDG_DATA_HOME override, else first existing cross-platform Goose dir."""
     if os.environ.get("STRATUM_SESSION_DB"):
         return Path(os.environ["STRATUM_SESSION_DB"])
-    if os.name == "nt" and os.environ.get("LOCALAPPDATA"):
-        base = Path(os.environ["LOCALAPPDATA"])
-    else:
-        base = Path(os.environ.get("XDG_DATA_HOME") or Path.home() / ".local" / "share")
-    return base / "goose" / "sessions" / "sessions.db"
+    if os.name != "nt" and os.environ.get("XDG_DATA_HOME"):
+        return Path(os.environ["XDG_DATA_HOME"]) / "goose" / "sessions" / "sessions.db"
+    dirs = goose_session_dirs()
+    for d in dirs:
+        cand = d / "sessions.db"
+        if cand.is_file():
+            return cand
+    return dirs[0] / "sessions.db"
 
 
-def ensure_o200k_cache(timeout: float = 15.0) -> bool:
+def ensure_o200k_cache(timeout: float = 15.0, retries: int = 3, sleeper=None) -> bool:
     """True when the o200k_base vocabulary is in the tiktoken cache with the published hash.
-    A missing file is downloaded once (bounded by `timeout`, hash-checked, written atomically) unless
-    STRATUM_SKIP_NET=1; any failure returns False so callers fall back to their no-tiktoken estimate
-    instead of hanging or trusting an unverified file."""
+    Always exports TIKTOKEN_CACHE_DIR when unset so tiktoken shares the vault cache dir instead of /tmp."""
     import hashlib
+    import tempfile
+    import urllib.request
+
     cache = default_tiktoken_cache_dir()
+    os.environ.setdefault("TIKTOKEN_CACHE_DIR", str(cache))
     target = cache / hashlib.sha1(_O200K_URL.encode("utf-8")).hexdigest()   # tiktoken's own cache key
+    tmp: str | None = None
     try:
         if target.is_file():
             return hashlib.sha256(target.read_bytes()).hexdigest() == _O200K_SHA256
         if os.environ.get("STRATUM_SKIP_NET") == "1":
             return False
-        import tempfile
-        import urllib.request
         with urllib.request.urlopen(_O200K_URL, timeout=timeout) as resp:   # noqa: S310 (fixed https URL)
             data = resp.read()
         if hashlib.sha256(data).hexdigest() != _O200K_SHA256:
             return False
         cache.mkdir(parents=True, exist_ok=True)
-        fd, tmp = tempfile.mkstemp(dir=str(cache))
+        fd, tmp = tempfile.mkstemp(dir=str(cache), prefix=".o200k-")
         with os.fdopen(fd, "wb") as fh:
             fh.write(data)
-        os.replace(tmp, target)
-        return True
+            fh.flush()
+            os.fsync(fh.fileno())
+        wait_fn = sleeper or time.sleep
+        for n in range(retries):
+            try:
+                os.replace(tmp, target)
+                tmp = None
+                return True
+            except PermissionError:
+                if n == retries - 1:
+                    raise
+                wait_fn(0.1 * (n + 1))
+        return False
     except Exception:
         return False
+    finally:
+        if tmp and os.path.exists(tmp):
+            try:
+                os.unlink(tmp)
+            except OSError:
+                pass
+
+
+def run_utf8(cmd, *, cwd=None, env=None, timeout=None, input=None, check: bool = False) -> subprocess.CompletedProcess:
+    """Run a subprocess capturing UTF-8 text safely across Windows (cp1252/cp1256), macOS, and Linux."""
+    return subprocess.run(
+        cmd,
+        cwd=cwd,
+        env=env,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        timeout=timeout,
+        input=input,
+        check=check,
+    )
+
+
+def run_git(repo, *args, env=None, timeout: float | None = 30, check: bool = False) -> subprocess.CompletedProcess:
+    """Run git in `repo` with -c core.quotepath=off and UTF-8 stdio so non-ASCII filenames never turn into octal escapes."""
+    return run_utf8(
+        ["git", "-C", str(repo), "-c", "core.quotepath=off", *args],
+        env=env,
+        timeout=timeout,
+        check=check,
+    )
+
+
+def sqlite_ro_uri(db_path: Path | str) -> str:
+    """Build a cross-platform SQLite read-only file URI (safe with spaces and Windows drive letters)."""
+    return f"{Path(db_path).resolve().as_uri()}?mode=ro"
 
 
 # ---- shared CLI contract (T-02e, U-47) ---------------------------------------------

@@ -224,7 +224,13 @@ def rotate_injection_log(path: Path = INJECTION_LOG, cap: int | None = None) -> 
     if len(lines) < cap:
         return None
     archive = path.with_name(f"injection-log.{_now()[:10]}.jsonl")
+    first = lines[0]
     path.replace(archive)   # rename refuses an existing target on Windows; replace behaves the same everywhere
+    try:
+        if json.loads(first).get("kind") == STATIC_CHILDHOOD_KIND:   # self_check() needs it first in the live log: copy it, the archive keeps its own
+            path.write_text(first + "\n", encoding="utf-8")
+    except ValueError:
+        pass
     return archive
 
 

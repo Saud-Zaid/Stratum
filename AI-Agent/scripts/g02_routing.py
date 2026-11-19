@@ -2,7 +2,7 @@
 # SPDX-FileCopyrightText: 2026 Saud Zaid
 """G02 routing tag (AD06 C6 F3): per-task model routing lives as kind="routing" rows in
 the decision ledger (body JSON: task, decision_type, model_proposed, model_approved;
-approved=null = pending the owner). Read-only: prints, never writes — writes go through the
+approved=null = pending owner). Read-only: prints, never writes — writes go through the
 sanctioned ledger API only (append_decision kind="routing").
 
 Usage:

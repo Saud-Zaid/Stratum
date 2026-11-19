@@ -151,7 +151,7 @@ def test_flush_spool_drops_expired_resends_live():
 def test_reader_connection_is_truly_readonly():
     tmp, db = _tmp_db()
     med.send("ep", {"n": "x"}, "s", key=_key(), db=db)
-    conn = sqlite3.connect(f"file:{db}?mode=ro", uri=True)
+    conn = sqlite3.connect(Path(db).resolve().as_uri() + "?mode=ro", uri=True)
     try:
         conn.execute("DELETE FROM send_log")
         raise AssertionError("the log read accepted a write — control 5 is only falsely separate")

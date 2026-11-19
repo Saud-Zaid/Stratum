@@ -1,11 +1,11 @@
 {
-  "created": "2026-11-12",
+  "created": "2026-11-19",
   "project": "Stratum",
   "method": "tiktoken o200k_base first-party measurement",
   "metrics": {
-    "operations_md_tokens": 97,
+    "operations_md_tokens": 152,
     "rules_md_tokens": 1553,
-    "handoff_md_tokens": 1720,
+    "handoff_md_tokens": 1733,
     "hit_rate_pct": 100,
     "usage_rate_pct": null,
     "token_ratio_out_in": null,
@@ -19,11 +19,11 @@
     "session_ceiling_scope": "live payload of a standard session: dynamic injection plus session context",
     "s13_max_seconds": 5,
     "hit_rate_cadence_days": 14,
-    "schedule_established": "2026-11-12",
+    "schedule_established": "2026-11-19",
     "s16_max_log_lines": 200
   },
   "notes": "Release baseline: measured on the shipped files. The detached signature of a vault owner is not part of a release.",
   "version": "1.0.0",
-  "last_measured": "2026-11-12",
-  "content_hash": "b2772837eb288617104c8e4c2ec9aff4e364b70a3342ffdc219fb68482eef074"
+  "last_measured": "2026-11-19",
+  "content_hash": "c9af279b6eeecf7813164707cfcaf9703832eb108b74ea1da2af42917c74935a"
 }

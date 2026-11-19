@@ -1,0 +1,9 @@
+# AI-Agent/config/limits.yaml — FX12 session caps (AD09 C5)
+# Values DERIVED from FX01 baseline (AD09-05 critique #2: threshold inferred, not invented):
+#   p90 of per-session Σprompts across 202 non-empty sessions (Oct 16-22): 1,343,865
+#   p90 of per-session calls: 34
+# Edit caps here, never in code. fx02_session_tax.py reads this file at runtime.
+session:
+  max_prompts: 1343865    # p90 Σprompts; exceeding = OVER (weekly-review candidate)
+  max_calls: 34           # p90 call count; exceeding = OVER
+  context_window: 200000  # AD13-M02: 200k token context window cap

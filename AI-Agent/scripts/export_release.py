@@ -41,7 +41,7 @@ class ExportError(Exception):
 
 
 def tracked_files(root: Path) -> list[str]:
-    r = subprocess.run(["git", "-C", str(root), "ls-files", "-z"], capture_output=True)
+    r = subprocess.run(["git", "-c", "core.quotepath=off", "-C", str(root), "ls-files", "-z"], capture_output=True)
     if r.returncode != 0:
         raise ExportError(f"not a git repository: {root}")
     return sorted(p.decode("utf-8") for p in r.stdout.split(b"\0") if p)
@@ -64,6 +64,9 @@ def load_manifest(root: Path) -> dict:
                 raise ExportError(f"rule {r['id']}: unknown action {r['action']!r}")
             if r["action"] in ("sanitize", "derive") and not r.get("via"):
                 raise ExportError(f"rule {r['id']}: {r['action']} needs `via`")
+        deny = m.get("privacy_denylist")
+        if deny is not None and (not isinstance(deny, list) or not all(isinstance(x, str) and x for x in deny)):
+            raise ExportError("privacy_denylist must be a list of non-empty strings")
         return m
     except ExportError:
         raise
@@ -198,8 +201,13 @@ def build_plan(root: Path) -> dict:
 
 WINDOWS_RESERVED = {"con", "prn", "aux", "nul", *{f"com{i}" for i in range(1, 10)}, *{f"lpt{i}" for i in range(1, 10)}}
 FORBIDDEN_SHIPPED = ("workspace", "diagnostic.log", "vault-index.sqlite3", "obsidian_askpass", "/.trash/", "isolation-report.json", "telemetry-latest", "net-preflight.log",
-                     "session-memory.jsonl", "task-key.json", "throttle-state.json", "mcp-tools-istefox/data.json", "update-time-on-edit", "/handoff/", "/AI-Agent/fixtures/", "card-template")
+                     "session-memory.jsonl", "task-key.json", "throttle-state.json", "mcp-tools-istefox/data.json", "update-time-on-edit", "/handoff/", "/AI-Agent/fixtures/", "card-template",
+                     "/.DS_Store", "/._", "/Thumbs.db", "/desktop.ini", "/.git_credentials_input")
 TEXT_EXT = {".md", ".py", ".json", ".yaml", ".yml", ".base", ".canvas", ".js", ".css", ".html", ".sh", ".ps1", ".cmd", ".toml", ".txt", ".cff", ".mdc", ".lock"}
+TEXT_NAMES = ("VERSION", "LICENSE", ".gitignore", ".gitattributes", "vault-python", "pre-commit", ".python-version")
+EXECUTABLE_FILES = (".githooks/pre-commit", "setup.sh", "AI-Agent/vault-python")
+BASE_ZIP_MAX_BYTES = 1024 * 1024
+STATE_RAW_MAX_BYTES = 256 * 1024
 
 
 def ntfs_problems(paths: list[str]) -> list[str]:
@@ -264,18 +272,23 @@ def add_spdx(text: str) -> str:
     return "\n".join(lines[:at] + list(SPDX_LINES) + lines[at:])
 
 
-def check_tree(out: Path) -> list[tuple[str, str, str]]:
+SECRET_RULE_FILES = {"AI-Agent/schema/secret-shapes.json"}   # gitleaks rules (MIT, provenance inside the file); never scanned as a leak
+
+
+def check_tree(out: Path, privacy_patterns: tuple[str, ...] | list[str] = ()) -> list[tuple[str, str, str]]:
     """The acceptance gates that can run on a built tree alone: Zero-Arabic (names, texts, and Python by token and AST), secrets
-    and Zero-Bidi, NTFS compatibility, and files that must never ship. [(gate, path, why)]"""
+    and Zero-Bidi, privacy denylist, orphan sweep, NTFS compatibility, and files that must never ship. [(gate, path, why)]"""
     findings: list[tuple[str, str, str]] = []
     files = sorted(f.relative_to(out).as_posix() for f in out.rglob("*") if f.is_file() and ".git/" not in f.relative_to(out).as_posix() + "/")
+    low_pats = [(pat, pat.lower()) for pat in privacy_patterns if pat]
     for p in files:
         if any(0x0600 <= ord(ch) <= 0x06FF for ch in p):
             findings.append(("zero-arabic", p, "Arabic in the file name"))
-        if any(x in "/" + p for x in FORBIDDEN_SHIPPED):
+        low_path = ("/" + p).lower()
+        if any(x.lower() in low_path for x in FORBIDDEN_SHIPPED):
             findings.append(("zero-leak", p, "a file that must never ship"))
         f = out / p
-        if f.suffix.lower() not in TEXT_EXT and f.name not in ("VERSION", "LICENSE", ".gitignore", ".gitattributes", "vault-python", "pre-commit", ".python-version"):
+        if f.suffix.lower() not in TEXT_EXT and f.name not in TEXT_NAMES:
             continue
         try:
             text = f.read_text(encoding="utf-8")
@@ -292,8 +305,28 @@ def check_tree(out: Path) -> list[tuple[str, str, str]]:
                 findings.append(("syntax", p, str(e)))
         elif any(0x0600 <= ord(ch) <= 0x06FF for ch in text):
             findings.append(("zero-arabic", p, "Arabic in the text"))
+        if low_pats and p != "CITATION.cff":
+            hits = 0
+            for ln, line in enumerate(text.splitlines(), 1):
+                if "SPDX-FileCopyrightText" in line or (p == "LICENSE" and ln == 1 and line.startswith("Required Notice:")):
+                    continue
+                low_line = line.lower()
+                for pat, low_pat in low_pats:
+                    if low_pat in low_line:
+                        findings.append(("privacy", p, f"line {ln}: matched {pat!r}"))
+                        hits += 1
+                        break
+                if hits >= 3:
+                    break
+        if p in SECRET_RULE_FILES:      # detection rules (regex text that matches other rules' shapes), as audit's secrets check leaves them out
+            continue
         for kind, ln, what in scan_secrets(text):
             findings.append(("zero-leak" if kind != "bidi" and kind != "bom" else "zero-arabic", p, f"line {ln}: {kind}: {what}"))
+    sweep_script = out / "AI-Agent" / "schema" / "sweep_orphan_writes.py"
+    if sweep_script.is_file():
+        sw = subprocess.run([sys.executable, str(sweep_script)], cwd=out, capture_output=True, text=True, encoding="utf-8", errors="replace", env=_tree_env())
+        if sw.returncode != 0:
+            findings.append(("orphan", "AI-Agent", (sw.stdout + sw.stderr).strip()[:200]))
     findings += [("ntfs-compat", "", m) for m in ntfs_problems(files)]
     findings += [("agentskills", p, why) for p, why in skill_problems(out)]
     return findings
@@ -329,11 +362,36 @@ def seed_tree(root: Path, out: Path, date: str) -> list[str]:
     made = []
     agent = out / "AI-Agent"
     (agent / "state").mkdir(parents=True, exist_ok=True)
-    mother_ops = (root / "AI-Agent/operations.md").read_text(encoding="utf-8")
-    head = mother_ops.split("- **op:**", 1)[0].rstrip() + "\n\n"
     handoff = (agent / "handoff.md").read_bytes()
-    (agent / "operations.md").write_text(head.rstrip() + "\n", encoding="utf-8")   # a fresh install has no operations yet
-    (agent / "last-runs.md").write_text((root / "AI-Agent/last-runs.md").read_text(encoding="utf-8"), encoding="utf-8")
+    ops_seed = (
+        f"---\n"
+        f"tags:\n"
+        f"  - ai-agent\n"
+        f"created: {date}\n"
+        f"updated_by: AI-Agent\n"
+        f"---\n\n"
+        f"# Operation log\n\n"
+        f"Multi-file changes are recorded as append-only operation and step entries using structured IDs:\n\n"
+        f"- Format (`op`): `OP-0001 · YYYY-MM-DDTHH:MM+00:00 · agent · open|applied|rolled_back|failed · base=<commit> · <title>`\n"
+        f"- Format (`step`): `OP-0001 · 1 · <path> · before=<12 hex>|new · after=<12 hex>|pending|deleted`\n\n"
+        f"Use `g10_operations.py stats` or `g10_operations.py query OP-NNNN` to inspect recorded operations.\n\n"
+        f"## Operations\n"
+    )
+    runs_seed = (
+        f"---\n"
+        f"tags:\n"
+        f"  - ai-agent\n"
+        f"created: {date}\n"
+        f"updated_by: AI-Agent\n"
+        f"---\n\n"
+        f"# Last runs\n\n"
+        f"Scheduled or recurring maintenance jobs append one append-only status line per completed run:\n\n"
+        f"- Format (`last_run`): `<job> · YYYY-MM-DD HH:MM · ok|fail · <note>`\n\n"
+        f"`state.py` prints the latest status per recorded job. Append only; never edit historical lines.\n\n"
+        f"## Runs\n"
+    )
+    (agent / "operations.md").write_text(ops_seed, encoding="utf-8")
+    (agent / "last-runs.md").write_text(runs_seed, encoding="utf-8")
     env = {**os.environ, "VAULT": str(out), "STRATUM_NET_LOG": os.devnull}
     scripts = str(out / "AI-Agent/schema")
     sys.path.insert(0, str(out / "AI-Agent/scripts"))
@@ -343,7 +401,7 @@ def seed_tree(root: Path, out: Path, date: str) -> list[str]:
         review = (_dt.date.fromisoformat(date) + _dt.timedelta(days=180)).isoformat()
         for args in ([sys.executable, "-c", SEED_PY, scripts, date, sha, review, str(perm)],
                      [sys.executable, str(out / "AI-Agent/scripts/g10_operations.py"), "rebuild"]):
-            r = subprocess.run(args, env=env, capture_output=True, text=True, cwd=out)
+            r = subprocess.run(args, env=env, capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=out)
             if r.returncode != 0:
                 raise ExportError(f"seed step failed ({Path(args[1]).name[:30]}): {(r.stderr or r.stdout)[-300:]}")
         metrics = {"operations_md_tokens": _tokens((agent / "operations.md").read_text(encoding="utf-8")),
@@ -402,11 +460,18 @@ def policy_of(rel: str) -> str:
 SKIP_DIRS = (".git", ".vault-release", ".venv", "__pycache__", "node_modules")
 
 
+def _tree_env() -> dict:
+    """The environment for a git command that works on the BUILT tree: a commit hook runs with GIT_INDEX_FILE, GIT_DIR and friends set, and a git
+    command in another directory that inherits them reads and WRITES the committing repository's index (found 2026-11-19: `git commit --only` through the
+    gate failed with an invalid object because `git add -A` in the built tree wrote the release's files into the commit's temporary index)."""
+    return {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+
+
 def tree_files(tree: Path) -> list[str]:
     """The files a release consists of, as sorted posix paths. In a git checkout that is what git tracks or would track (a CI runner adds
     .venv and caches that are none of the release); in a bare tree it is every file outside the skipped folders."""
     if (tree / ".git").exists():
-        r = subprocess.run(["git", "ls-files", "-z", "--cached", "--others", "--exclude-standard"], cwd=tree, capture_output=True)
+        r = subprocess.run(["git", "-c", "core.quotepath=off", "ls-files", "-z", "--cached", "--others", "--exclude-standard"], cwd=tree, capture_output=True, env=_tree_env())
         if r.returncode == 0:
             names = {n.decode("utf-8") for n in r.stdout.split(b"\0") if n}
             return sorted(n for n in names if (tree / n).is_file())
@@ -445,28 +510,59 @@ def _zip(tree: Path, names: list[str], dest: Path) -> int:
 
 
 def build_archives(tree: Path, dist: Path) -> dict:
-    """base.zip (the core an upgrade reads, at most 500 KB), full.zip (the whole vault) and SHA256SUMS."""
+    """base.zip (the core an upgrade reads, at most 1 MB), full.zip (the whole vault) and SHA256SUMS."""
     dist.mkdir(parents=True, exist_ok=True)
     names = [n for n in tree_files(tree) if n.split("/")[0] not in (".git", ".vault-release")]
     base = [n for n in names if n in BASE_FILES or n.startswith(BASE_PREFIXES)]
+    dir_bytes = {
+        prefix.rstrip("/"): sum((tree / n).stat().st_size for n in base if n.startswith(prefix))
+        for prefix in ("AI-Agent/scripts/", "AI-Agent/state/")
+    }
     sizes = {"base.zip": _zip(tree, base, dist / "base.zip"), "full.zip": _zip(tree, names, dist / "full.zip")}
     (dist / "SHA256SUMS").write_text("".join(f"{hashlib.sha256((dist / n).read_bytes()).hexdigest()}  {n}\n" for n in sorted(sizes)), encoding="utf-8")
-    if sizes["base.zip"] > 500 * 1024:
-        raise ExportError(f"base.zip is {sizes['base.zip']} bytes, over the 500 KB limit")
-    return {"members": {"base.zip": len(base), "full.zip": len(names)}, "bytes": sizes}
+    if sizes["base.zip"] > BASE_ZIP_MAX_BYTES:
+        raise ExportError(f"base.zip is {sizes['base.zip']} bytes, over the {BASE_ZIP_MAX_BYTES} B limit")
+    if dir_bytes["AI-Agent/state"] > STATE_RAW_MAX_BYTES:
+        raise ExportError(f"AI-Agent/state is {dir_bytes['AI-Agent/state']} bytes, over the {STATE_RAW_MAX_BYTES} B limit")
+    return {"members": {"base.zip": len(base), "full.zip": len(names)}, "bytes": sizes, "dir_bytes": dir_bytes}
+
+
+def seed_upgrade_state(out: Path, man: dict) -> list[str]:
+    """Seed .vault-release/installed.json and .vault-release/base/<rel> for factory three-way merges."""
+    rel_dir = out / ".vault-release"
+    rel_dir.mkdir(parents=True, exist_ok=True)
+    installed = {
+        "version": man["version"],
+        "files": {r: e["sha256"] for r, e in sorted(man["files"].items()) if e["policy"] != "keep"},
+    }
+    (rel_dir / "installed.json").write_text(json.dumps(installed, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    made = [".vault-release/installed.json"]
+    for rel, e in sorted(man["files"].items()):
+        if e["policy"] == "merge" and (out / rel).is_file():
+            dest = rel_dir / "base" / rel
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            dest.write_bytes((out / rel).read_bytes())
+            made.append(f".vault-release/base/{rel}")
+    return made
 
 
 def init_repo(out: Path) -> None:
     """A fresh git repository with the pre-commit hook wired and every file staged; the first commit is the owner's."""
     for args in (["init", "-q"], ["config", "core.hooksPath", ".githooks"], ["add", "-A"]):
-        r = subprocess.run(["git", *args], cwd=out, capture_output=True, text=True)
+        r = subprocess.run(["git", "-c", "core.quotepath=off", *args], cwd=out, capture_output=True, text=True, encoding="utf-8", errors="replace", env=_tree_env())
         if r.returncode != 0:
             raise ExportError(f"git {args[0]} failed: {r.stderr.strip()[:200]}")
+    execs = [rel for rel in EXECUTABLE_FILES if (out / rel).is_file()]
+    if execs:
+        r = subprocess.run(["git", "-c", "core.quotepath=off", "update-index", "--chmod=+x", *execs], cwd=out, capture_output=True, text=True, encoding="utf-8", errors="replace", env=_tree_env())
+        if r.returncode != 0:
+            raise ExportError(f"git update-index failed: {r.stderr.strip()[:200]}")
 
 
 def write_release(root: Path, out: Path, plan: dict | None = None) -> dict:
     """Build the release tree under `out` (which must not exist or be empty). Returns {'written': n, 'skipped_seeds': [...], 'findings': [...]}."""
     from _vaultlib import apply_patch, canonical_sha256, derive_obsidian, dump_yaml_block, release_contract
+    manifest_doc = load_manifest(root)
     plan = plan or build_plan(root)
     if plan["findings"]:
         raise ExportError("the plan has findings; nothing was written")
@@ -480,7 +576,7 @@ def write_release(root: Path, out: Path, plan: dict | None = None) -> dict:
         nonlocal written
         dest = out / rel
         dest.parent.mkdir(parents=True, exist_ok=True)
-        if Path(rel).suffix.lower() in TEXT_EXT | {".cmd", ".bat", ".ps1", ".toml"} or Path(rel).name in ("VERSION", "LICENSE", ".gitignore", ".gitattributes", "vault-python"):
+        if Path(rel).suffix.lower() in TEXT_EXT | {".cmd", ".bat", ".ps1", ".toml"} or Path(rel).name in TEXT_NAMES:
             data = data.replace(b"\r\n", b"\n")   # the release is LF everywhere: its hashes must not depend on the author's checkout
         if rel.endswith(".py"):
             data = add_spdx(data.decode("utf-8")).encode("utf-8")
@@ -534,15 +630,16 @@ def write_release(root: Path, out: Path, plan: dict | None = None) -> dict:
             else:
                 raise ExportError(f"unknown derive step {via!r} for {rel}")
     env = {**os.environ, "VAULT": str(out), "STRATUM_NET_LOG": os.devnull}
-    r = subprocess.run([sys.executable, str(out / "AI-Agent/scripts/derive_live_arch.py"), "--derive"], env=env, capture_output=True, text=True, cwd=out)
+    r = subprocess.run([sys.executable, str(out / "AI-Agent/scripts/derive_live_arch.py"), "--derive"], env=env, capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=out)
     if r.returncode != 0:
         raise ExportError(f"the live architecture document could not be derived: {(r.stderr or r.stdout)[-300:]}")
     made = seed_tree(root, out, release_date(root))
     missing = sorted(set(skipped) - set(made))
     if missing:
         raise ExportError(f"seeds the plan lists but nothing generated: {missing}")
-    write_manifest(out)
-    findings = check_tree(out)
+    man = write_manifest(out)
+    seed_upgrade_state(out, man)
+    findings = check_tree(out, privacy_patterns=manifest_doc.get("privacy_denylist") or ())
     if not findings:
         init_repo(out)
     return {"written": written + len(made) + 1, "skipped_seeds": [], "findings": findings}

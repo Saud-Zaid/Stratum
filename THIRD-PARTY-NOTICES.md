@@ -4,7 +4,7 @@ Stratum is licensed under the [PolyForm Noncommercial License 1.0.0](LICENSE). I
 
 ## Obsidian community plugins
 
-**None of these plugins' code is part of this repository.** `python AI-Agent/scripts/install_plugins.py` downloads each plugin from its upstream release over HTTPS and checks the SHA-256 of every file against `.obsidian/plugins.lock.json`. You receive each plugin under the license its author chose, directly from the author; those licenses (including the AGPL-3.0 and GPL-3.0 ones) apply to the plugin you install, not to this repository's own files. Check a plugin's own repository for its current license before you redistribute anything.
+**None of these plugins' code is part of this repository.** `.venv/bin/python AI-Agent/scripts/install_plugins.py` downloads each plugin from its upstream release over HTTPS and checks the SHA-256 of every file against `.obsidian/plugins.lock.json`. You receive each plugin under the license its author chose, directly from the author; those licenses (including the AGPL-3.0 and GPL-3.0 ones) apply to the plugin you install, not to this repository's own files. Check a plugin's own repository for its current license before you redistribute anything.
 
 | Plugin | Version | Upstream | License (SPDX) | Copyright notice |
 |---|---|---|---|---|

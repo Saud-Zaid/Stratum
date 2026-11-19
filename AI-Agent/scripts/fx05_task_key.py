@@ -48,7 +48,7 @@ def read_limits():
 
 
 def session_stats(sid):
-    con = sqlite3.connect(f"file:{GOOSE_DB}?mode=ro", uri=True)
+    con = sqlite3.connect(Path(GOOSE_DB).resolve().as_uri() + "?mode=ro", uri=True)
     cur = con.cursor()
     cur.execute(
         "SELECT COUNT(*), SUM(total_tokens), SUM(input_tokens - cache_read_tokens) "

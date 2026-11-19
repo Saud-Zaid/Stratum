@@ -31,6 +31,7 @@ import json
 import os
 import re
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
@@ -42,6 +43,7 @@ from pathlib import Path, PurePosixPath
 
 RELEASE_DIR = ".vault-release"
 INSTALLED = f"{RELEASE_DIR}/installed.json"
+EXECUTABLE_FILES = frozenset({".githooks/pre-commit", "setup.sh", "AI-Agent/vault-python"})
 POLICIES = {"replace", "merge", "union", "json-merge", "add-only", "keep"}
 ALLOWED_HOSTS = ("github.com", "objects.githubusercontent.com", "release-assets.githubusercontent.com")
 MAX_ZIP = 256 * 1024 * 1024
@@ -239,7 +241,7 @@ def merge3(base: str, local: str, upstream: str) -> tuple[str, int, str]:
                 p = Path(d) / name
                 p.write_bytes(text.encode("utf-8"))
                 paths.append(str(p))
-            r = subprocess.run(["git", "merge-file", "-p", "--diff3", "-L", "local", "-L", "base", "-L", "upstream", *paths],
+            r = subprocess.run(["git", "-c", "core.quotepath=off", "merge-file", "-p", "--diff3", "-L", "local", "-L", "base", "-L", "upstream", *paths],
                                capture_output=True)
             if 0 <= r.returncode < 127:
                 return r.stdout.decode("utf-8", "replace"), r.returncode, "git"
@@ -248,7 +250,7 @@ def merge3(base: str, local: str, upstream: str) -> tuple[str, int, str]:
 
 
 # ---------------------------------------------------------------- files
-def write_atomic(dest: Path, data: bytes, retries: int = 5) -> None:
+def write_atomic(dest: Path, data: bytes, retries: int = 5, *, mode: int | None = None, executable: bool = False, sleeper=time.sleep) -> None:
     dest.parent.mkdir(parents=True, exist_ok=True)
     fd, tmp = tempfile.mkstemp(dir=dest.parent, prefix=".upgrade-")
     try:
@@ -256,6 +258,15 @@ def write_atomic(dest: Path, data: bytes, retries: int = 5) -> None:
             fh.write(data)
             fh.flush()
             os.fsync(fh.fileno())
+        if os.name != "nt":
+            if mode is not None:
+                os.chmod(tmp, mode)
+            elif executable:
+                os.chmod(tmp, 0o755)
+            elif dest.exists():
+                os.chmod(tmp, stat.S_IMODE(dest.stat().st_mode))
+            else:
+                os.chmod(tmp, 0o644)
         for n in range(retries):
             try:
                 os.replace(tmp, dest)
@@ -263,7 +274,7 @@ def write_atomic(dest: Path, data: bytes, retries: int = 5) -> None:
             except PermissionError:                  # Windows: another process holds the file for a moment
                 if n == retries - 1:
                     raise
-                time.sleep(0.2 * (n + 1))
+                sleeper(0.2 * (n + 1))
     finally:
         if os.path.exists(tmp):
             os.unlink(tmp)
@@ -272,13 +283,28 @@ def write_atomic(dest: Path, data: bytes, retries: int = 5) -> None:
 def read_installed(root: Path) -> dict | None:
     f = root / INSTALLED
     if not f.is_file():
-        return None
+        return _installed_from_manifest(root)
     try:
         d = json.loads(f.read_text(encoding="utf-8"))
         vtuple(d["version"])
         return d
     except (ValueError, KeyError, UpgradeError):
         raise UpgradeError(f"{INSTALLED} is unreadable")
+
+
+def _installed_from_manifest(root: Path) -> dict | None:
+    """A `git clone` install has no .vault-release/installed.json but ships release_manifest.json: what the manifest lists
+    (minus the keep-policy files) is exactly what was installed. The result carries source=release_manifest so callers can say so."""
+    f = root / "release_manifest.json"
+    if not f.is_file():
+        return None
+    try:
+        man = json.loads(f.read_text(encoding="utf-8"))
+        vtuple(man["version"])
+        files = {r: e["sha256"] for r, e in man["files"].items() if e.get("policy", "replace") != "keep"}
+    except (ValueError, KeyError, TypeError, AttributeError, UpgradeError):
+        return None
+    return {"version": man["version"], "files": files, "source": "release_manifest"}
 
 
 def _json_union(local: bytes, up: bytes) -> bytes:
@@ -421,7 +447,7 @@ def run_upgrade(root: Path, src: Source, dry_run=False, ack=False, no_sync=True,
     for st in renames:                                           # migrations first: the new layout, then the new content
         if st["op"] == "rename" and (root / st["from"]).is_file() and not (root / st["to"]).exists():
             data = (root / st["from"]).read_bytes()
-            write_atomic(root / st["to"], data)
+            write_atomic(root / st["to"], data, executable=(st["to"] in EXECUTABLE_FILES))
             (root / st["from"]).unlink()
             out(f"  MIGRATE rename {st['from']} -> {st['to']}")
         elif st["op"] == "delete" and (root / st["path"]).is_file():
@@ -431,7 +457,7 @@ def run_upgrade(root: Path, src: Source, dry_run=False, ack=False, no_sync=True,
         if kind == "delete":
             (root / rel).unlink()
         else:
-            write_atomic(root / rel, data)
+            write_atomic(root / rel, data, executable=(rel in EXECUTABLE_FILES))
     _park(root, p)
     new_installed = {"version": man["version"], "files": {r: e["sha256"] for r, e in man["files"].items() if e["policy"] != "keep"}}
     # a file kept locally after a conflict stays on its old base hash, so the next upgrade still sees it as modified
@@ -465,7 +491,7 @@ def _sync(root: Path, out) -> int:
     if not shutil.which("uv"):
         out("UPGRADE sync skipped: uv is not installed")
         return 0
-    r = subprocess.run(["uv", "sync", "--locked", "--no-dev"], cwd=root, capture_output=True, text=True)
+    r = subprocess.run(["uv", "sync", "--locked", "--no-dev", "--no-editable"], cwd=root, capture_output=True, text=True, encoding="utf-8", errors="replace")
     out("UPGRADE sync " + ("ok" if r.returncode == 0 else f"FAILED: {r.stderr.strip()[-200:]}"))
     if r.returncode == 0 and (root / ".venv").is_dir() and (root / "uv.lock").is_file():
         (root / ".venv" / ".stratum-lock-sha256").write_text(sha256((root / "uv.lock").read_bytes()) + "\n", encoding="utf-8")
@@ -477,7 +503,7 @@ def _verify(root: Path, backup: Path | None, out) -> int:
     if not audit.is_file():
         out("UPGRADE verify skipped: no audit.py")
         return 0
-    r = subprocess.run([sys.executable, str(audit), "--ratchet", "--no-cache"], cwd=root, capture_output=True, text=True, env=dict(os.environ, VAULT=str(root)))
+    r = subprocess.run([sys.executable, str(audit), "--ratchet", "--no-cache"], cwd=root, capture_output=True, text=True, encoding="utf-8", errors="replace", env=dict(os.environ, VAULT=str(root)))
     if r.returncode == 0:
         out("UPGRADE verify: GATE CLEAR")
         return 0

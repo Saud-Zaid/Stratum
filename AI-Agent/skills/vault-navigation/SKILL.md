@@ -22,13 +22,13 @@ Escalate retrieval through explicit budget tiers; never open full files upfront.
 - **B0 Orientation:** `AI-Agent/handoff.md` + relevant traps (`AI-Agent/traps/TR-*.md`) before modification workflows.
 - **B1 Path Discovery:** locate candidates by path/tag, no bodies: `find_by_name`, `list_tags`, `list_dir`.
 - **B2 MOC:** consult `06-MOCs/` indexes (e.g. `MOC - Traps` for traps) before prose search; resolve cross-references.
-- **B3 Outline:** never load files >4,000B to locate a subsection. Run `python3 AI-Agent/scripts/outline.py "<path>"` — self-refuses on files <2,000B or <3 headings (read those directly). Returns headings, levels, line numbers, no body tokens.
-- **B4 Section:** `python3 AI-Agent/scripts/section.py "<path>" "<title>"`. Leaf sections bounded under 4,000B (R4); ceiling trips print `[SECTION-BYTES total=N returned=N remaining=N]` — continue via `--all` or narrowed `Lx-y`.
+- **B3 Outline:** never load files >4,000B to locate a subsection. Run `.venv/bin/python AI-Agent/scripts/outline.py "<path>"` — self-refuses on files <2,000B or <3 headings (read those directly). Returns headings, levels, line numbers, no body tokens.
+- **B4 Section:** `.venv/bin/python AI-Agent/scripts/section.py "<path>" "<title>"`. Leaf sections bounded under 4,000B (R4); ceiling trips print `[SECTION-BYTES total=N returned=N remaining=N]` — continue via `--all` or narrowed `Lx-y`.
 - **B5 Full File\*:** only for new architectural docs, full-file refactoring, or files known <2,000B.
 
 ## Session = Task (FX05)
 
-- **A session is a task:** every navigation call opens under one task: `python AI-Agent/scripts/fx05_task_key.py open --session <id> --task "<name>"` — one key per session; navigation with no open task counts against the general budget, not the task's.
+- **A session is a task:** every navigation call opens under one task: `.venv/bin/python AI-Agent/scripts/fx05_task_key.py open --session <id> --task "<name>"` — one key per session; navigation with no open task counts against the general budget, not the task's.
 - **The return limit:** when the result (a path or a section) is reached, close the task at once (`close`) and return the content to the original call — no extra depth without a justification recorded in the task; a task that passes the p90 ceiling while open is flagged OVER.
 
 ## Search Rules

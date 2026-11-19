@@ -4,6 +4,11 @@ ROOT="$(git rev-parse --show-toplevel)" || exit 1
 cd "$ROOT" || exit 1
 VAULT="$ROOT"
 export VAULT
+PYTHONUTF8=1
+export PYTHONUTF8
+# Obsidian's GUI commits with a minimal PATH (macOS): add the usual uv/python locations.
+PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
+export PATH
 TIKTOKEN_CACHE_DIR="${TIKTOKEN_CACHE_DIR:-${XDG_CACHE_HOME:-${LOCALAPPDATA:-$HOME/.cache}}/tiktoken}"
 export TIKTOKEN_CACHE_DIR
 
@@ -14,10 +19,7 @@ elif [ -x .venv/Scripts/python.exe ]; then
 else
   PY=AI-Agent/vault-python      # no .venv: the wrapper finds an interpreter and the pinned libraries
 fi
-if [ -d AI-Agent/scripts ] && [ "$PY" != AI-Agent/vault-python ]; then
-  PYTHONPATH="$ROOT/AI-Agent/scripts${PYTHONPATH:+:$PYTHONPATH}"
-  export PYTHONPATH
-fi
+# No PYTHONPATH: each script runs from AI-Agent/scripts, so its own folder is already on sys.path (no ':' vs ';' issue).
 
 "$PY" AI-Agent/scripts/audit.py --ratchet || exit 1
 "$PY" AI-Agent/scripts/consumer_suites.py --staged --run || exit 1

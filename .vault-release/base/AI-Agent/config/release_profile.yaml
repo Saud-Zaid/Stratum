@@ -1,0 +1,50 @@
+mode: release
+language: en
+owner:
+  name: Vault owner
+  aliases: []
+headings:
+  next_steps:
+  - Next Steps
+  progress_log:
+  - Progress Log
+  - Changelog
+checks:
+  disabled:
+  - arch
+  - club
+  - t1
+  - sigkey
+  - s16
+  - s17
+paths:
+  live_doc: 03-Resources/Live-Agent-Architecture.md
+  system_homes: []
+  collector_exclude_prefixes: []
+  people_dir: 02-Areas/People
+  capabilities_doc: 03-Resources/Agent-Capabilities.md
+  progress_note: ''
+markdown:
+  md024_siblings_only_files:
+  - CHANGELOG.md
+limits:
+  read_cap_bytes: 16384
+  operations_md_max_tokens: 25000
+sigkey:
+  key_file: ''
+  fingerprint: ''
+scripts:
+  optional_modules:
+  - _locale_ar
+  - arch_contract
+  - arch_hook
+  - arch_rules
+  - archcatalog
+  - archdue
+  - archmap
+  - archops
+  - archprep
+  - archroute
+  - club_rules
+  - club_state
+  - regress

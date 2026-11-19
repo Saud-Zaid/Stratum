@@ -22,6 +22,7 @@ import argparse
 import json
 import os
 import secrets
+import stat
 import sys
 import tempfile
 import time
@@ -42,20 +43,33 @@ class McpError(Exception):
     """Something that stops the change before any file is written."""
 
 
-def write_atomic(dest: Path, text: str, mode: int | None = None) -> None:
+def write_atomic(dest: Path, text: str, mode: int | None = None, retries: int = 5, sleeper=time.sleep) -> None:
     """Write through a temp file in the same folder and rename it over the target, so a crash leaves the old file whole."""
     dest.parent.mkdir(parents=True, exist_ok=True)
     fd, tmp = tempfile.mkstemp(prefix=dest.name + ".", dir=dest.parent)
     try:
         with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as f:
             f.write(text)
-        if mode is not None and os.name != "nt":
-            os.chmod(tmp, mode)
-        os.replace(tmp, dest)
-    except BaseException:
+            f.flush()
+            os.fsync(f.fileno())
+        if os.name != "nt":
+            if mode is not None:
+                os.chmod(tmp, mode)
+            elif dest.exists():
+                os.chmod(tmp, stat.S_IMODE(dest.stat().st_mode))
+            else:
+                os.chmod(tmp, 0o644)
+        for n in range(retries):
+            try:
+                os.replace(tmp, dest)
+                return
+            except PermissionError:
+                if n == retries - 1:
+                    raise
+                sleeper(0.1 * (n + 1))
+    finally:
         if os.path.exists(tmp):
             os.unlink(tmp)
-        raise
 
 
 def read_json(path: Path, default):
@@ -137,7 +151,8 @@ def enable(root: Path, rotate=False, port=None, dry_run=False, out=print) -> int
     write_atomic(root / MCP_REL, dump(p["mcp"]), 0o600)
     write_atomic(root / DATA_REL, dump(p["data"]), 0o600)
     write_atomic(root / ENABLED_REL, dump(p["enabled"]))
-    out(f"enabled: token {p['token_id']}, http://{HOST}:{p['port']}/mcp; .mcp.json written (mode 0600, git-ignored). Reload Obsidian to start the server.")
+    perm = "git-ignored" if os.name == "nt" else "mode 0600, git-ignored"
+    out(f"enabled: token {p['token_id']}, http://{HOST}:{p['port']}/mcp; .mcp.json written ({perm}). Reload Obsidian to start the server.")
     return 0
 
 

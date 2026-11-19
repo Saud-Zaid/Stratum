@@ -17,8 +17,10 @@ import argparse
 import hashlib
 import json
 import os
+import stat
 import sys
 import tempfile
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -98,7 +100,7 @@ def file_state(root: Path, pid: str, fn: str, entry: dict) -> str:
     return "MODIFIED"
 
 
-def write_atomic(dest: Path, data: bytes) -> None:
+def write_atomic(dest: Path, data: bytes, retries: int = 5, sleeper=time.sleep) -> None:
     dest.parent.mkdir(parents=True, exist_ok=True)
     fd, tmp = tempfile.mkstemp(dir=dest.parent, prefix=".install-")
     try:
@@ -106,11 +108,19 @@ def write_atomic(dest: Path, data: bytes) -> None:
             fh.write(data)
             fh.flush()
             os.fsync(fh.fileno())
-        os.replace(tmp, dest)
-    except BaseException:
+        if os.name != "nt":
+            os.chmod(tmp, stat.S_IMODE(dest.stat().st_mode) if dest.exists() else 0o644)
+        for n in range(retries):
+            try:
+                os.replace(tmp, dest)
+                return
+            except PermissionError:
+                if n == retries - 1:
+                    raise
+                sleeper(0.1 * (n + 1))
+    finally:
         if os.path.exists(tmp):
             os.unlink(tmp)
-        raise
 
 
 def run(root: Path, lock: dict, only: str = "", check: bool = False, dry_run: bool = False, fetcher=fetch) -> list[tuple[str, str, str]]:

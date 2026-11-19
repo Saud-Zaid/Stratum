@@ -24,7 +24,7 @@ HOOK = None   # tests may pin a path; otherwise it is resolved through git, whic
 def git(*args):
     try:
         return subprocess.run(["git", "-C", VAULT, "-c", "core.quotepath=off", *args],
-                              capture_output=True, text=True, timeout=30)
+                              capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=30)
     except Exception:
         return None
 

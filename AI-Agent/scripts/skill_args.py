@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 # SPDX-FileCopyrightText: 2026 Saud Zaid
-"""Skill args retrieval (2026-10-23, AD10 C12/R3, the owner approval): the retrieval
+"""Skill args retrieval (2026-10-23, AD10 C12/R3, owner approval): the retrieval
 consumer of the MCP-style skill argument contracts. Prints a skill's args block
 (input/output/consumer) without loading the SKILL.md body -- agents route by
 contract, not by reading whole skill files.

@@ -76,7 +76,7 @@ def run_exfil_test(canary: str, db: Path = DB_PATH) -> dict:
     proc = subprocess.run(
         [sys.executable, str(VAULT / "AI-Agent" / "scripts" / "audit.py"),
          "--check", "g13", "--path", probe_rel],
-        capture_output=True, text=True, cwd=VAULT)
+        capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=VAULT)
     caught = proc.returncode == 1 and "G13-free-curl" in proc.stdout  # audit contract: error -> exit(1)
     probe_path.unlink(missing_ok=True)
     add("CH-2-free-curl",

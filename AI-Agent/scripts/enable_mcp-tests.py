@@ -38,7 +38,7 @@ def vault(installed=True, data=None, enabled=("dataview",)):
 
 
 def cli(root, *a):
-    return subprocess.run([sys.executable, str(HERE / "enable_mcp.py"), *a], capture_output=True, text=True, env=dict(os.environ, VAULT=str(root)), timeout=60)
+    return subprocess.run([sys.executable, str(HERE / "enable_mcp.py"), *a], capture_output=True, text=True, encoding="utf-8", errors="replace", env=dict(os.environ, VAULT=str(root)), timeout=60)
 
 
 try:
@@ -97,6 +97,21 @@ try:
     ok("M19-other-servers-in-mcp-json-survive-enable-and-disable", json.loads((e / M.MCP_REL).read_text(encoding="utf-8"))["mcpServers"] == {"other": {"url": "x"}})
     ok("M20-help-rc0-unknown-flag-rc2-bad-port-rc2", cli(v, "--help").returncode == 0 and cli(v, "--bogus").returncode == 2 and cli(v, "--port", "80").returncode == 2)
     ok("M21-status-reports-without-secrets", (lambda r: r.returncode == 0 and "enabled" in r.stdout and tok not in r.stdout)(cli(e, "--status")))
+
+    _orig_rep, _tries = os.replace, [0]
+    def _flaky_rep_em(a, b):
+        _tries[0] += 1
+        if _tries[0] < 3:
+            raise PermissionError("busy")
+        return _orig_rep(a, b)
+    _emv = vault()
+    try:
+        os.replace = _flaky_rep_em
+        M.write_atomic(_emv / "retry.json", "{}\n", mode=0o600, retries=4, sleeper=lambda _: None)
+    finally:
+        os.replace = _orig_rep
+    ok("M22-write-atomic-retries-permission-error",
+       _tries[0] == 3 and (_emv / "retry.json").read_text(encoding="utf-8") == "{}\n" and not list(_emv.glob("retry.json.*")))
 finally:
     for t in tmps:
         shutil.rmtree(t, ignore_errors=True)
