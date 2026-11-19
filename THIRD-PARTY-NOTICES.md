@@ -22,6 +22,7 @@ Stratum is licensed under the [PolyForm Noncommercial License 1.0.0](LICENSE). I
 | `consistent-attachments-and-links` | 4.0.0 | [dy-sh/obsidian-consistent-attachments-and-links](https://github.com/dy-sh/obsidian-consistent-attachments-and-links) | MIT | Copyright (C) 2021-2026 by Dmitry Savosh (d.savosh@gmail.com) |
 | `advanced-rename-and-delete-handler` | 1.3.0 | [mnaoumov/obsidian-advanced-rename-and-delete-handler](https://github.com/mnaoumov/obsidian-advanced-rename-and-delete-handler) | MIT | Copyright (C) 2026 by Michael Naumov |
 | `automatic-table-of-contents` | 1.8.0 | [johansatge/obsidian-automatic-table-of-contents](https://github.com/johansatge/obsidian-automatic-table-of-contents) | MIT | Copyright © 2023 Johan Satgé |
+| `stratum-iso-dates` | 0.1.0 | [Saud-Zaid/stratum-iso-dates](https://github.com/Saud-Zaid/stratum-iso-dates) | MIT | Copyright (c) 2026 Saud Zaid |
 
 The license identifiers come from each repository's license file as reported by GitHub when the lock was written (2026-11-12); the copyright lines are copied from those files.
 

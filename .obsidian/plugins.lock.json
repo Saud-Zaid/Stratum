@@ -336,6 +336,26 @@
           "bytes": 335
         }
       }
+    },
+    "stratum-iso-dates": {
+      "version": "0.1.0",
+      "repo": "Saud-Zaid/stratum-iso-dates",
+      "tag": "0.1.0",
+      "minAppVersion": "1.13.7",
+      "license": "MIT",
+      "files": {
+        "main.js": {
+          "url": "https://github.com/Saud-Zaid/stratum-iso-dates/releases/download/0.1.0/main.js",
+          "sha256": "446b396ea7cd1cba03965ae78f62896e6d82b273153aba8743ef8dc57904076a",
+          "bytes": 1604,
+          "normalized_sha256": "f0cdef7db49d82a06956d510fc2c4532d3d5ad62f3c7a4f2c82746ca234bf198"
+        },
+        "manifest.json": {
+          "url": "https://github.com/Saud-Zaid/stratum-iso-dates/releases/download/0.1.0/manifest.json",
+          "sha256": "7681adb9a20825a89ab0a40571ec6f1a1381055e0950c0ad4b71efc14aec697a",
+          "bytes": 296
+        }
+      }
     }
   }
 }
