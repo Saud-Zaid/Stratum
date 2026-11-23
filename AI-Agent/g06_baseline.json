@@ -5,7 +5,7 @@
   "metrics": {
     "operations_md_tokens": 152,
     "rules_md_tokens": 1555,
-    "handoff_md_tokens": 1733,
+    "handoff_md_tokens": 1776,
     "hit_rate_pct": 100,
     "usage_rate_pct": null,
     "token_ratio_out_in": null,
@@ -25,5 +25,5 @@
   "notes": "Release baseline: measured on the shipped files. The detached signature of a vault owner is not part of a release.",
   "version": "1.0.0",
   "last_measured": "2026-11-23",
-  "content_hash": "7126807a5341285ed648cd279a8be8aa44f7165de1ce48cf203cf969dbd1ec03"
+  "content_hash": "71c970c03fc6e960f9337c662145e8e3e945bf8f141e551bbff07101c3b5ab21"
 }

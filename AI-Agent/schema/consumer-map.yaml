@@ -8,7 +8,7 @@ created: 2026-10-23
 
 counters:
   skills:       16    # the number of folders in AI-Agent/skills/ (skill_args-tests, audit consumer_drift)
-  tools:        39    # the number of scripts in AI-Agent/scripts/ (a *-tests.py file is not counted); the release exporter checks it against the built tree
+  tools:        40    # the number of scripts in AI-Agent/scripts/ (a *-tests.py file is not counted); the release exporter checks it against the built tree
 
 # Registry mapping changed paths -> consumer suites that must run (mandatory broad-set fallback for uncovered paths:
 # silence is never an option).

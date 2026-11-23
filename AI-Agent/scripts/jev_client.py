@@ -8,7 +8,8 @@ Usage (from the vault root):
 
 Server path resolution (first hit wins, no silent fallback):
   1. JEV_MCP_PATH environment variable (set in the vault or session)
-  2. jev extension args in the agent config (JEV_CONFIG, else $XDG_CONFIG_HOME/goose/config.yaml,
+  2. jev_mcp.py next to this client (the server the vault ships), unless JEV_CONFIG is set
+  3. jev extension args in the agent config (JEV_CONFIG, else $XDG_CONFIG_HOME/goose/config.yaml,
      else ~/.config/goose/config.yaml): the `- <path>.py` entry
 
 Fails LOUDLY (non-zero exit) if the server path cannot be resolved or the file is
@@ -51,10 +52,14 @@ def resolve_server_path() -> Path:
             return p
         sys.exit(f"ERROR jev-client: JEV_MCP_PATH set but file missing: {p}")
 
+    sibling = Path(__file__).resolve().parent / "jev_mcp.py"   # the server shipped next to this client
+    if sibling.is_file() and not os.environ.get("JEV_CONFIG"):   # an explicit JEV_CONFIG still names the server
+        return sibling
+
     cfg = config_path()
     if not cfg.is_file():
         sys.exit(
-            f"ERROR jev-client: JEV_MCP_PATH unset and {cfg} missing — "
+            f"ERROR jev-client: JEV_MCP_PATH unset, no jev_mcp.py next to the client and {cfg} missing — "
             "set JEV_MCP_PATH. Failing loudly per the vault's infrastructure rule."
         )
     try:
@@ -103,6 +108,26 @@ def load_api_key() -> None:
                 os.environ["OPENROUTER_API_KEY"] = key
                 return
     sys.exit("ERROR jev-client: OPENROUTER_API_KEY not found in jev extension envs")
+
+
+PASSED_ENV = ("OPENROUTER_API_KEY", "JEV_MODEL", "JEV_TIMEOUT")
+
+
+def server_env(base: dict[str, str]) -> dict[str, str]:
+    """The server's environment: the MCP library's safe default (`base`) plus the Jev variables that are set.
+    Without `env` the MCP stdio client passes only the safe default, so an exported key never reached the server."""
+    env = dict(base)
+    env.update({k: os.environ[k] for k in PASSED_ENV if os.environ.get(k)})
+    return env
+
+
+def server_command(server: Path) -> tuple[str, list[str]]:
+    """Run the server with this interpreter when it has mcp and httpx (the locked `--extra jev` install), otherwise
+    through uv with the two libraries added for the run."""
+    import importlib.util
+    if all(importlib.util.find_spec(m) is not None for m in ("mcp", "httpx")):
+        return sys.executable, [str(server)]
+    return "uv", ["run", "--with", "httpx", "--with", "mcp<2", "python3", str(server)]
 
 
 def question_warnings(question: str) -> list[str]:
@@ -163,15 +188,13 @@ async def main() -> None:
     load_api_key()
     try:
         from mcp import ClientSession, StdioServerParameters
-        from mcp.client.stdio import stdio_client
+        from mcp.client.stdio import get_default_environment, stdio_client
     except ImportError:
         sys.exit("ERROR jev-client: mcp<2 not installed — run via uv with "
                  "--with 'mcp<2' --with httpx --with pyyaml")
 
-    params = StdioServerParameters(
-        command="uv",
-        args=["run", "--with", "httpx", "--with", "mcp<2", "python3", str(server)],
-    )
+    command, cmd_args = server_command(server)
+    params = StdioServerParameters(command=command, args=cmd_args, env=server_env(get_default_environment()))
     async with stdio_client(params) as (read, write):
         async with ClientSession(read, write) as session:
             await session.initialize()

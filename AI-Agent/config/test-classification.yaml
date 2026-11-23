@@ -263,3 +263,13 @@ stratum_core:
   t05_actions:
   - extend_to_docs_skills_manifest
   note: T-02e slice - the shared CLI contract (--help rc 0, unknown flag rc 2) and the stratum-* console scripts.
+- path: AI-Agent/scripts/jev_client-tests.py
+  runner: direct
+  lane: parallel
+  t05_actions:
+  - u40_zero_arabic_ast
+- path: AI-Agent/scripts/jev_mcp-tests.py
+  runner: direct
+  lane: parallel
+  t05_actions:
+  - u40_zero_arabic_ast
