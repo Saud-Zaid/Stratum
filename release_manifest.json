@@ -251,7 +251,7 @@
     },
     "AI-Agent/g06_baseline.json": {
       "policy": "add-only",
-      "sha256": "e91d4a6537623176fc069db620d896477fccef9416f86cce338d8bc026fb1e37"
+      "sha256": "9af853cc3e9cf6798dd576db8dd6be5911f220bae4b64b1e376e5bbe15fd5f50"
     },
     "AI-Agent/gate_baseline.json": {
       "policy": "replace",
@@ -283,7 +283,7 @@
     },
     "AI-Agent/rules.md": {
       "policy": "merge",
-      "sha256": "fefab92d89e33d9aa27c7f77b938cccb4015385ab50416baf405caad8258bb7e"
+      "sha256": "7a18d159e24829ebd60e613f5d0f52d5ca186c186c244439ab7aeb6aabda6a89"
     },
     "AI-Agent/schema/budget.yaml": {
       "policy": "replace",

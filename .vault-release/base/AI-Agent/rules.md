@@ -46,5 +46,5 @@ Before any real delete (file or folder) or move/rename in the vault, stop and as
 
 ## Changelog
 
-- 2026-10-02 — the registry opened with its first rules; four carry their text here because they have no other home, the rest point to their source (Claude)
-- 2026-11-12 — release form: rules that govern the mother vault's own architecture work were left out; RL-0031 (live reference) added (Claude)
+- 2026-10-02 — the registry opened with its first rules; four carry their text here because they have no other home, the rest point to their source (maintainer)
+- 2026-11-12 — release form: rules that govern the mother vault's own architecture work were left out; RL-0031 (live reference) added (maintainer)
