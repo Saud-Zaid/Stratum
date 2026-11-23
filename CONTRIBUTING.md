@@ -24,13 +24,13 @@ Stratum is built from a source tree that the maintainer keeps. An accepted chang
 Every version from `1.0.0-beta.5` on has its own release branch, `release/<version>` (for example `release/1.0.0-beta.5`).
 
 1. The maintainer creates `release/<version>` from an up-to-date `main` and opens a pull request from it titled `release: <version>`. It moves the `[Unreleased]` lines under the new version and raises the version in `VERSION`, `CITATION.cff`, `CHANGELOG.md`, `pyproject.toml` and `uv.lock`.
-2. After the squash merge, the maintainer tags the merge commit on `main` with `v<version>` and points `release/<version>` at the same commit, so the branch, the tag and the published release hold the same files. The release workflow builds the archives, checksums, SBOM and attestation, and publishes the release with this version's changelog section and the merged pull requests.
+2. After the squash merge, the maintainer tags the merge commit on `main` with `v<version>`. The release branch is kept, not deleted: its last commit holds the same files as the tag. The release workflow builds the archives, checksums, SBOM and attestation, and publishes the release with this version's changelog section and the merged pull requests since the last published release.
 3. Versions follow [Semantic Versioning](https://semver.org/): `-beta.N`, then `-rc.N`, then the final `X.Y.Z`. A tag with a hyphen is published as a pre-release.
-4. Tags and release branches are protected: a published version is never moved or deleted.
+4. Tags cannot be moved or deleted; release branches cannot be deleted or rewritten. A broken release is never retagged: its changelog heading is marked `[YANKED]` and the fix ships as a new version.
 
 ## Branches that stay
 
 Change branches are deleted after the merge; the pull request is the record. Two kinds of branch stay:
 
 - `main`, where all work lands.
-- `release/<version>`, one per version from `1.0.0-beta.5` on, holding exactly what that version shipped. A fix for users who cannot upgrade goes to that branch through a pull request and ships as a new version; every other fix goes to `main` and ships in the next version.
+- `release/<version>`, one per version from `1.0.0-beta.5` on, holding the files that version shipped. A fix for users who cannot upgrade goes to that branch through a pull request and ships as a new version; every other fix goes to `main` and ships in the next version.
