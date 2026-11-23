@@ -4,7 +4,7 @@
     ".agents/recipes/probe.yaml": "720efa1e40fdfc39780848070d1fb1789c1a7b8482adb5eb6498776940b4898c",
     ".agents/recipes/research-deliverable.yaml": "25c12f109ca8525d628882c4e5f85de7e10822aff4e1ed7282e959e9020a2a3f",
     ".cursor/rules/stratum.mdc": "382e644ad63fccd4f1f337b1fd66500586fc80a4792f34c4011525af18a8929c",
-    ".gitattributes": "341d9a56a6b1d12a06831bafa5728b07e39b71c2b854869a4c5b865b0e7fe05a",
+    ".gitattributes": "dbde5597d5b560e9427223f169a9557790b30d9f6ab8e153c46ca7f282635a8d",
     ".githooks/pre-commit": "41a1616d3e10b2a18da9c94ee267eb74396b437dad93696e072f2dec35d6fa93",
     ".github/pull_request_template.md": "1eec44189b9f6826c9445fddb608d6dd49b6f096bfa1676624061737c259795e",
     ".github/release.yml": "63bbde1d32048fdc0cf3f311f84210b5254930f6b8700f299a4e6891d377b4ce",
