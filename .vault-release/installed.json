@@ -94,7 +94,7 @@
     "AI-Agent/scripts/_vaultlib.py": "e6177ebc5542ef6f81166833814959812c7ffaddea28c0a8c079f1f89d05912f",
     "AI-Agent/scripts/agent_adapters-tests.py": "15c4d65e0e20b8fc15aeb0bcd1e0ffc73be8be4d8bdf6d21c902680a801ddf32",
     "AI-Agent/scripts/agent_adapters.py": "04238f216bf80226cc7ffd123989b35b19d1d575cd04558dd0a4ad289d92302f",
-    "AI-Agent/scripts/agent_digest-tests.py": "ddfec96ad06c6d3df31985ffb05ea8bc3a22b1716143987df24ff44fbcab4999",
+    "AI-Agent/scripts/agent_digest-tests.py": "c3c0de9179e9bc77f08c321094c56823f626ad346fae178531147ec3297c6613",
     "AI-Agent/scripts/agent_digest.py": "1749ffeeaafc6c4db24bb1d8e1447f389ef66c4e869a1f81763073349375911c",
     "AI-Agent/scripts/apply-tests.py": "a7115d8cdde9ef23568885fbb316cbfc72690758640783ce0d9a3312f48402e7",
     "AI-Agent/scripts/apply.py": "9d7eb04d3ccdb6427c1374e1fd57262a2bb8d4f3765801097db5b5bfd5d3ce5e",

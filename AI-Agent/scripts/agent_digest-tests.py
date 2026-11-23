@@ -254,11 +254,28 @@ if real:
                     calls += 1
                 if isinstance(b, dict) and b.get("type") == "tool_result" and b.get("is_error"):
                     errs += 1
-    dr = A.digest_claude(f)
-    ok("real logs: calls and errors of the largest Claude Code transcript equal an independent count", dr["tool_calls"] == calls and dr["error_total"] == errs, (dr["tool_calls"], calls, dr["error_total"], errs))
-    ok("real logs: nothing that looks like a home path or a credential is in that digest", "/home/" not in json.dumps(dr) and "sk_live" not in json.dumps(dr), "")
+    # a session that crosses an ISO week has one row per week (digest_unit keeps only the last), so the whole file is the sum of its rows
+    rows_ = A.digest_slices(A.AD.claude_unit(f))
+    sc, se = sum(r["tool_calls"] for r in rows_), sum(r["error_total"] for r in rows_)
+    ok("real logs: calls and errors of the largest Claude Code transcript, summed over its weeks, equal an independent count", (sc, se) == (calls, errs), (sc, calls, se, errs, len(rows_)))
+    ok("real logs: nothing that looks like a home path or a credential is in any of its rows", "/home/" not in json.dumps(rows_) and "sk_live" not in json.dumps(rows_), "")
 else:
     print("SKIP real logs: no Claude Code transcripts on this machine")
+
+# --- a session across a week boundary: the rows sum to the whole, and a result keeps its call's label across the boundary
+xw = [asst("w1", "m", [tu("c1", "Read", {"file_path": "/a.md"})], "2026-11-22T22:00:00Z"),
+      dict(tr("c1", "ok"), timestamp="2026-11-22T22:00:05Z"),
+      asst("w2", "m", [tu("c2", "Read", {"file_path": "/b.md"})], "2026-11-22T23:59:00Z"),
+      dict(tr("c2", "File does not exist: /b.md", True), timestamp="2026-11-23T00:00:30Z"),
+      asst("w3", "m", [tu("c3", "Bash", {"command": "git status"})], "2026-11-23T08:00:00Z"),
+      dict(tr("c3", "Exit code 128\nfatal: not a git repository", True), timestamp="2026-11-23T08:00:02Z")]
+fx = cl / "cross.jsonl"
+fx.write_text("\n".join(json.dumps(r) for r in xw) + "\n", encoding="utf-8")
+sx = A.digest_slices(A.AD.claude_unit(fx))
+ok("weeks: a Claude Code session from Sunday to Monday is two rows that sum to the whole session",
+   [(r["sid"], r["tool_calls"], r["error_total"]) for r in sx] == [("cross@2026-W47", 2, 0), ("cross", 1, 2)], [(r["sid"], r["tool_calls"], r["error_total"]) for r in sx])
+ok("weeks: digest_unit is the last week's row, and an error whose result lands next week keeps its call's label",
+   A.digest_unit(A.AD.claude_unit(fx))["tool_calls"] == 1 and {(e["tool"], e["kind"]) for e in sx[-1]["errors"]} == {("Read", "missing-file"), ("Bash:git", "exit")}, sx[-1]["errors"])
 
 # Step 4 fixes
 ok("S4a-home-slug-scrubs-the-windows-drive-prefix", A._HOME_SLUG.sub("~", "C--Users-dev-proj") == "~proj", A._HOME_SLUG.sub("~", "C--Users-dev-proj"))
