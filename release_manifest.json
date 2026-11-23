@@ -935,7 +935,7 @@
     },
     "CHANGELOG.md": {
       "policy": "replace",
-      "sha256": "1ab3bc94f63d4968a1d4124664ce28dd004a29583b3915509a0144e7ad3111c7"
+      "sha256": "3b1fe589ce022bb4945fd305445cb9fc0bcf152315182988820d19de1ffba1cd"
     },
     "CITATION.cff": {
       "policy": "replace",
@@ -944,6 +944,10 @@
     "CLAUDE.md": {
       "policy": "merge",
       "sha256": "fca46f0bda046f7e776452ddba0cd087f9f5b12d5afa6732115cd992e0f5c71e"
+    },
+    "CONTRIBUTING.md": {
+      "policy": "replace",
+      "sha256": "8c099dc08db01e263b9014af8a2f8e45eb69ce8c91c73712da8f39b5cec501ec"
     },
     "Dashboard.md": {
       "policy": "add-only",
@@ -980,6 +984,10 @@
     "README.md": {
       "policy": "merge",
       "sha256": "2c8535888e25a33127e22383e65ba7a745126891c34fa1229e453fcec98aa421"
+    },
+    "SECURITY.md": {
+      "policy": "replace",
+      "sha256": "7307be98b513497181ebdda775feacdca3ad41b5f3456c4ce5fba0a2ffffac52"
     },
     "THIRD-PARTY-NOTICES.md": {
       "policy": "replace",
