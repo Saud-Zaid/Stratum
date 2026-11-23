@@ -41,4 +41,7 @@ jobs:
           # the notes are this version's CHANGELOG section, then the merged pull requests grouped by label (.github/release.yml)
           version="${GITHUB_REF_NAME#v}"
           awk -v head="## [${version}]" 'index($0, head) == 1 {p = 1; next} /^## \[/ {p = 0} p' CHANGELOG.md > release-notes.md
+          # the pull request list starts at the last published release, so a tag that was never published (a yanked build) loses nothing
+          prev="$(gh release list --exclude-drafts --limit 1 --json tagName --jq '.[0].tagName // empty')"
+          if [ -n "$prev" ]; then flags="$flags --notes-start-tag $prev"; fi
           gh release create "${GITHUB_REF_NAME}" dist/* --title "${GITHUB_REF_NAME}" --notes-file release-notes.md --generate-notes $flags

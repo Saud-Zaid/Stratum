@@ -51,7 +51,7 @@
     },
     ".github/workflows/release.yml": {
       "policy": "replace",
-      "sha256": "df48d73bf6b424a558e55e9074407ba015cf6e3be14efc9ce7e0c57f0aaeccb4"
+      "sha256": "0a65d7098c59dfddf41a4fe5f3b09c30d046055061df49efa9f5c9a206eefe39"
     },
     ".gitignore": {
       "policy": "replace",
@@ -935,7 +935,7 @@
     },
     "CHANGELOG.md": {
       "policy": "replace",
-      "sha256": "61d94b9a08e9edcf89c6583ae95c9063e5349f05ba23f2f59bdbe7e9732def29"
+      "sha256": "5b7ed9672cc3d22b643639be89ebdfd01cc8123af33ac2d36b171f59f5fa8eea"
     },
     "CITATION.cff": {
       "policy": "replace",
