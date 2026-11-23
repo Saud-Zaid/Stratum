@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file. The format foll
 
 ## [Unreleased]
 
+## [1.0.0-beta.5] - 2026-11-23
+
 ### Added
 - `CONTRIBUTING.md` (how a change reaches `main`, how a release is made, and the release branch every version has from `1.0.0-beta.5` on) and `SECURITY.md` (private vulnerability reporting through GitHub).
 - A pull request template, and a check that a pull request title reads `type: description` and that the pull request carries no AI co-author or attribution line.
@@ -93,7 +95,8 @@ All notable changes to this project are documented in this file. The format foll
 ### Security
 - Plugin code is fetched over HTTPS and verified against pinned SHA-256 hashes; no plugin token is stored in the repository.
 
-[Unreleased]: https://github.com/Saud-Zaid/Stratum/compare/v1.0.0-beta.4...HEAD
+[Unreleased]: https://github.com/Saud-Zaid/Stratum/compare/v1.0.0-beta.5...HEAD
+[1.0.0-beta.5]: https://github.com/Saud-Zaid/Stratum/compare/v1.0.0-beta.4...v1.0.0-beta.5
 [1.0.0-beta.4]: https://github.com/Saud-Zaid/Stratum/compare/v1.0.0-beta.3...v1.0.0-beta.4
 [1.0.0-beta.3]: https://github.com/Saud-Zaid/Stratum/compare/v1.0.0-beta.2...v1.0.0-beta.3
 [1.0.0-beta.2]: https://github.com/Saud-Zaid/Stratum/compare/v1.0.0-beta.1...v1.0.0-beta.2

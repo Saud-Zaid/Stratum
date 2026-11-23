@@ -235,7 +235,7 @@
     },
     "AI-Agent/audit_baseline.json": {
       "policy": "add-only",
-      "sha256": "dc161183185dc29bec857d888627c6f5e5091bafb7280cd901f0b8e94f415597"
+      "sha256": "eb6ac577af568c3e025b1fc699a21ceb2eff21b5ceb0eb9a6f88ec49b2c38535"
     },
     "AI-Agent/capabilities.yaml": {
       "policy": "replace",
@@ -263,7 +263,7 @@
     },
     "AI-Agent/g06_baseline.json": {
       "policy": "add-only",
-      "sha256": "9af853cc3e9cf6798dd576db8dd6be5911f220bae4b64b1e376e5bbe15fd5f50"
+      "sha256": "b7d6580572519d600e3baf49d2293a74fe21a11eaf36c20f0cf7cf80808d54ab"
     },
     "AI-Agent/gate_baseline.json": {
       "policy": "replace",
@@ -275,11 +275,11 @@
     },
     "AI-Agent/last-runs.md": {
       "policy": "add-only",
-      "sha256": "7da19e98820db7e0fe4ccb6f4effc48b7d51042a6f7cebc05e0fe1d60574277c"
+      "sha256": "a7074faed746a2a21b5825b14e5ff38858c773d9158f87dd389f3a41d7da4449"
     },
     "AI-Agent/operations.md": {
       "policy": "add-only",
-      "sha256": "9c3158711d537726997fb0bbd58bcc5110cf035de7bc29acba8f310c04f9cf48"
+      "sha256": "6e2b6ea069344be3318dbe9fd8a680a6d79041d9847e578ac61665e52a85c12f"
     },
     "AI-Agent/permanent-layer.md": {
       "policy": "merge",
@@ -759,11 +759,11 @@
     },
     "AI-Agent/state/decision-ledger.sqlite3": {
       "policy": "add-only",
-      "sha256": "baea693979a7e7b2679e31b882b03ad2a89c708b74341bcddb0bf131e8b5853f"
+      "sha256": "083cc858422a4cdb5b54c8ddca288e0fc2f0e2e39f146fb6e053b132153c1409"
     },
     "AI-Agent/state/injection-log.jsonl": {
       "policy": "add-only",
-      "sha256": "08cd49ae659f54e761d21356147a5c2c4fb56de61b2513b947f1469bd0eade87"
+      "sha256": "726becedbdd041fbffe8db26dbddda27cd335df196347838ff6e3e123b58a199"
     },
     "AI-Agent/state/kill-switch-state.json": {
       "policy": "add-only",
@@ -935,11 +935,11 @@
     },
     "CHANGELOG.md": {
       "policy": "replace",
-      "sha256": "3b1fe589ce022bb4945fd305445cb9fc0bcf152315182988820d19de1ffba1cd"
+      "sha256": "61d94b9a08e9edcf89c6583ae95c9063e5349f05ba23f2f59bdbe7e9732def29"
     },
     "CITATION.cff": {
       "policy": "replace",
-      "sha256": "dd5664ca2b7ef77110c8d3885cd6e19d1583bb9aa1ba5905ba0b546e02e36686"
+      "sha256": "19ab52c7f75164acb5c40a201d579a00897ba53641c42312dd8297e17918815b"
     },
     "CLAUDE.md": {
       "policy": "merge",
@@ -983,7 +983,7 @@
     },
     "README.md": {
       "policy": "merge",
-      "sha256": "2c8535888e25a33127e22383e65ba7a745126891c34fa1229e453fcec98aa421"
+      "sha256": "475e56b8739096968b13f2d48b6ae7ed5b33ee55b867c3ac4e5c523e6fa9610e"
     },
     "SECURITY.md": {
       "policy": "replace",
@@ -1043,11 +1043,11 @@
     },
     "VERSION": {
       "policy": "replace",
-      "sha256": "a949582be8515731df942c424b00ae889db12382b651f9dabb67dbd800f9fbce"
+      "sha256": "8fc2138cb07104e971c7232bf9c96ece50e6c190c28679ab46af7a937d5ea8ef"
     },
     "pyproject.toml": {
       "policy": "replace",
-      "sha256": "19fc56362a72f62b6e1b6ab11e7876b29f3e2632a265972f44f818c672883df2"
+      "sha256": "854453472ae96f56fe0a164e42f702505cefb38441b44528a75a4cded1431c4e"
     },
     "setup.cmd": {
       "policy": "replace",
@@ -1071,10 +1071,10 @@
     },
     "uv.lock": {
       "policy": "replace",
-      "sha256": "1c81381c06484ccb25c0372793bb156a1f8f956df4392a450512654f3cd9ddaa"
+      "sha256": "e28a82e412692a6428012335c4850e288d9a137e724cc2aa0b227cf134a05f4e"
     }
   },
   "format_version": 2,
   "migrations": [],
-  "version": "1.0.0-beta.4"
+  "version": "1.0.0-beta.5"
 }
