@@ -387,7 +387,7 @@
     },
     "AI-Agent/scripts/agent_digest-tests.py": {
       "policy": "replace",
-      "sha256": "ddfec96ad06c6d3df31985ffb05ea8bc3a22b1716143987df24ff44fbcab4999"
+      "sha256": "c3c0de9179e9bc77f08c321094c56823f626ad346fae178531147ec3297c6613"
     },
     "AI-Agent/scripts/agent_digest.py": {
       "policy": "replace",
