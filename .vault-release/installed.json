@@ -231,8 +231,8 @@
     "AI-Agent/vault-python": "7437e0526ccef8fcf5a39ffa97941d44a0084dcea1ce9cc139a780e7d1f22cdf",
     "AI-Agent/vault-python.ps1": "64ad21ab62203fb14f24e38fb6e2f4dc3fd346c2f2672bd0763725d066ce5368",
     "Active-Work.base": "2445ecb675bb416d419066b6aa38e08bb43fba7a2d638a1166b48a662fd5dc12",
-    "CHANGELOG.md": "5b7ed9672cc3d22b643639be89ebdfd01cc8123af33ac2d36b171f59f5fa8eea",
-    "CITATION.cff": "19ab52c7f75164acb5c40a201d579a00897ba53641c42312dd8297e17918815b",
+    "CHANGELOG.md": "4faa97225873ecff207453a0502f3f77e66756bcddea8a9f60c7e81e535e8272",
+    "CITATION.cff": "26053e09ee2e3a16b35dda018f8d94d241e3d43ad2e1baf1a1f9f2c39ab67cf3",
     "CLAUDE.md": "fca46f0bda046f7e776452ddba0cd087f9f5b12d5afa6732115cd992e0f5c71e",
     "CONTRIBUTING.md": "fcb9004645e1fce89d3aa5a924a6ee83c1196ced27b1efc38cee88397cb3fdfb",
     "Dashboard.md": "7bb11917ffa65fb4dd3583104c03ac90a495527bc6467c8c466be0dcf38f7ae9",
@@ -243,7 +243,7 @@
     "LICENSES/ISC.txt": "480217557bab2d0478b1ec418e01f74b1763d393ee9cf673dce74d80ac28b4d8",
     "LICENSES/MIT.txt": "24f09d6d1dc1534b8efcaca939ddec1969cac255471aae25d299ab8e81ada29f",
     "LICENSES/PolyForm-Noncommercial-1.0.0.md": "c0ea4a896d2c8c394b29f9427589996db826cd501c512279ff0ed3ef48fabbe5",
-    "README.md": "475e56b8739096968b13f2d48b6ae7ed5b33ee55b867c3ac4e5c523e6fa9610e",
+    "README.md": "eaa36bded67e8a4943ee0548847f29a73bd378489e6a38e16850a7b3f4091d6d",
     "SECURITY.md": "7307be98b513497181ebdda775feacdca3ad41b5f3456c4ce5fba0a2ffffac52",
     "THIRD-PARTY-NOTICES.md": "7d5a3af5c0ef0dd479f712bc8d2ee0565b25611ac93b93e597064e062c616690",
     "Templates/Area.md": "a0882d32bc89f915ebdec34401dabf9931645e99e539e878a1bfa0edcc06172a",
@@ -258,14 +258,14 @@
     "Templates/Resource.md": "68448f95651b4105cf679013cd089c47a122e5b00761776aa04223582ba44354",
     "Templates/Task-Spec.md": "d92de793e01ec243b3dfd0700e09a6c18c49bbd7a859080ce3f6ebcb40bbf517",
     "Templates/Weekly-Tracker.md": "1bf5b33a6997c16a4b87efb027badd8114c12504bf6d1db4c08fd7c5875f3017",
-    "VERSION": "8fc2138cb07104e971c7232bf9c96ece50e6c190c28679ab46af7a937d5ea8ef",
-    "pyproject.toml": "854453472ae96f56fe0a164e42f702505cefb38441b44528a75a4cded1431c4e",
+    "VERSION": "6ee72141c43fbc544035005cc916fbecd80a836825785a810273373a86ed3f59",
+    "pyproject.toml": "d5ec35c2b0bfd89273c8b25355ba50066e128198ed539c05fbe2bbf178bb8293",
     "setup.cmd": "0d5e9f834731a420c8a16057377bfce07ad5ea065b75f593c0d2dbedcb842873",
     "setup.ps1": "f47013149e87be20e3b873ba4ced72e3df4b0ed66efcea9a428f9618ff923191",
     "setup.sh": "1ec02e67d6895a3b78f0b06116937146217dadbc89a183bab4001210b49b9ca4",
     "src/stratum_cli/__init__.py": "44375fa6412400d74eafe43ec7bd4371a45ede20c364eb8a72c426d21e523588",
     "src/stratum_cli/main.py": "fc3511e1f89f27ed9a3aea95479a80c52ba15d5fb852f573ec1da21bffcc783a",
-    "uv.lock": "e28a82e412692a6428012335c4850e288d9a137e724cc2aa0b227cf134a05f4e"
+    "uv.lock": "e6520a3548baa82d1a3b7ae683bae3835a118f878375dd4c85a94ec88e2a6f16"
   },
-  "version": "1.0.0-beta.5"
+  "version": "1.0.0-beta.6"
 }
