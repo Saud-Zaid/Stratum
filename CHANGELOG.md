@@ -5,6 +5,7 @@ All notable changes to this project are documented in this file. The format foll
 ## [Unreleased]
 
 ### Added
+- `CONTRIBUTING.md` (how a change reaches `main`, how a release is made, and the release branch every version has from `1.0.0-beta.5` on) and `SECURITY.md` (private vulnerability reporting through GitHub).
 - A pull request template, and a check that a pull request title reads `type: description` and that the pull request carries no AI co-author or attribution line.
 
 ### Changed
