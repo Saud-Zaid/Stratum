@@ -4,6 +4,13 @@ All notable changes to this project are documented in this file. The format foll
 
 ## [Unreleased]
 
+### Added
+- A pull request template, and a check that a pull request title reads `type: description` and that the pull request carries no AI co-author or attribution line.
+
+### Changed
+- CI builds a pushed branch only when it is `main`; a pull request runs its own build once instead of twice.
+- Release notes are the version's section of this file followed by the merged pull requests, grouped by label.
+
 ## [1.0.0-beta.4] - 2026-11-20
 
 ### Added

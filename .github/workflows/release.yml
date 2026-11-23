@@ -38,4 +38,7 @@ jobs:
         run: |
           flags=""
           case "${GITHUB_REF_NAME}" in *-*) flags="--prerelease" ;; esac   # v1.0.0-beta.4 is published as a pre-release
-          gh release create "${GITHUB_REF_NAME}" dist/* --title "${GITHUB_REF_NAME}" --notes-file CHANGELOG.md $flags
+          # the notes are this version's CHANGELOG section, then the merged pull requests grouped by label (.github/release.yml)
+          version="${GITHUB_REF_NAME#v}"
+          awk -v head="## [${version}]" 'index($0, head) == 1 {p = 1; next} /^## \[/ {p = 0} p' CHANGELOG.md > release-notes.md
+          gh release create "${GITHUB_REF_NAME}" dist/* --title "${GITHUB_REF_NAME}" --notes-file release-notes.md --generate-notes $flags
