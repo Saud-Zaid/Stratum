@@ -1,7 +1,10 @@
-# One line ending everywhere: LF. Hashes in release_manifest.json and in the plugin lock are over LF bytes, so a checkout that
-# rewrites line endings (Windows autocrlf) would make every file look modified. setup.cmd and the PowerShell script use no labels
-# and no multi-line constructs that need CRLF.
+# One line ending everywhere: LF. Hashes in release_manifest.json are over LF bytes, so a checkout that rewrites line endings
+# (Windows autocrlf) would make every file look modified. setup.cmd and the PowerShell script use no labels and no multi-line
+# constructs that need CRLF.
 * text=auto eol=lf
+# Plugin files are kept exactly as their upstream release ships them: the plugin lock hashes those bytes, and some upstream
+# manifests use CRLF (the Excalidraw one does), which a LF conversion would turn into a lock mismatch on every fresh clone.
+.obsidian/plugins/*/manifest.json -text
 *.sh text eol=lf
 .githooks/* text eol=lf
 AI-Agent/vault-python text eol=lf

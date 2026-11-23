@@ -27,7 +27,7 @@
     },
     ".gitattributes": {
       "policy": "replace",
-      "sha256": "341d9a56a6b1d12a06831bafa5728b07e39b71c2b854869a4c5b865b0e7fe05a"
+      "sha256": "dbde5597d5b560e9427223f169a9557790b30d9f6ab8e153c46ca7f282635a8d"
     },
     ".githooks/pre-commit": {
       "policy": "replace",
