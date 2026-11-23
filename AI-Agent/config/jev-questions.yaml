@@ -1,0 +1,26 @@
+# AI-Agent/config/jev-questions.yaml - the registry of the questions you ask Jev more than once.
+#
+# Calibrate a question before you rely on it: write its exact wording here, label cases for it in its case file (passes,
+# fails, and deceptive fails that look like passes), then run
+#   AI-Agent/vault-python AI-Agent/scripts/jev_calibrate.py            # checks the files and prints the plan; sends nothing
+#   AI-Agent/vault-python AI-Agent/scripts/jev_calibrate.py --run      # asks Jev for every case (paid calls)
+# Any change to a question's wording or criteria, the threshold or the model is a new question: calibrate it again.
+# The rules are in `jev_calibrate.py --help`. One-off gates (jev_gate in the proposal-critique-gate skill) are not
+# registered here; they follow the skill's confidence and thin-margin rules.
+
+version: 1
+model: typesafe/jev-1.14          # must equal the model the shipped server uses (JEV_MODEL or jev_mcp.py)
+threshold: 0.95                   # a case passes when the probability and the confidence both reach it
+borderline: [0.90, 0.95]          # a first answer in this band is asked 3 times and the median is used
+max_false_reject: 0.15            # at most this share of the pass cases may be rejected
+alpha: 0.10                       # the false-accept rate the certified threshold bounds (29 deceptive cases needed)
+
+questions:
+  # An example to copy. Its six synthetic cases show the format; they are far too few to certify anything.
+  evidence_supports_claim:
+    tool: jev_check
+    instructions: "Does the listed evidence support the stated claim with a file path, a number or a command output, rather than with an assertion alone?"
+    criteria:
+      "true": the evidence names a file path, a number or a command output that supports the claim
+      "false": the evidence asserts the claim without a file path, a number or a command output, or supports another claim
+    golden: AI-Agent/config/jev-golden/evidence_supports_claim.yaml

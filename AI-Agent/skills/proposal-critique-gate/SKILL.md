@@ -26,6 +26,8 @@ This skill hard-codes that loop so no session can skip a phase.
 
 In both modes the verdict is registered in the decision ledger with a unique entry ID before the commit gate allows the note.
 
+**Recurring questions are calibrated first.** A one-off `jev_gate` follows the confidence rules below. A question an agent asks Jev more than once (a check run on every note, task or release) is written in `AI-Agent/config/jev-questions.yaml` and measured with `AI-Agent/scripts/jev_calibrate.py --run` on labelled cases before anything relies on it: no false accept, at most 15% false rejects, and `PROVISIONAL` until 29 deceptive cases certify a threshold. A change of wording, criteria, threshold or model is a new question.
+
 ## The Loop (5 phases, all mandatory)
 
 ### Phase 1 — Propose (P-1, P-2, …)

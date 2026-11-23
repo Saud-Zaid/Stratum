@@ -5,6 +5,7 @@ All notable changes to this project are documented in this file. The format foll
 ## [Unreleased]
 
 ### Added
+- `jev_calibrate.py`, a question registry (`AI-Agent/config/jev-questions.yaml`) and a synthetic example case file: calibrate a recurring Jev question on your own labelled cases before relying on it (no false accept, at most 15% false rejects, a certified threshold from 29 deceptive cases). It plans and prices a run before sending anything.
 - The Jev decision server `AI-Agent/scripts/jev_mcp.py` ships next to its client, and the README explains how to enable the Jev gate with one OpenRouter API key.
 
 ### Fixed

@@ -191,7 +191,7 @@
     },
     "03-Resources/Live-Agent-Architecture.md": {
       "policy": "merge",
-      "sha256": "95b8c2a5f612243f5284c90f4ae0b18494ecad850b1485f6f47e6e6cab0bf9a1"
+      "sha256": "78f4ac5cdad15615ea3ab0ed3d7dcaafe413afc2137d792f64d03e8246a914de"
     },
     "03-Resources/Second-Brain-User-Guide.md": {
       "policy": "merge",
@@ -241,6 +241,14 @@
       "policy": "replace",
       "sha256": "fa5aa4f2cedfce5c76bf930eb3206da5897e7375ad5fdc0d323f6af9b4507fd0"
     },
+    "AI-Agent/config/jev-golden/evidence_supports_claim.yaml": {
+      "policy": "replace",
+      "sha256": "f627e0229965410364677ed022b374ffeab3d8b789dbad5686607369f3d05a3a"
+    },
+    "AI-Agent/config/jev-questions.yaml": {
+      "policy": "replace",
+      "sha256": "c6a84161c3a67b4c9ffbc06738eefaee6d2e92a82621025e0156c131341e9abc"
+    },
     "AI-Agent/config/limits.yaml": {
       "policy": "merge",
       "sha256": "4021c6ad6fec63d83ffc98bbbd7ffe4d63152bcf79bfcdb7fb6d6b96b16b63dc"
@@ -251,7 +259,7 @@
     },
     "AI-Agent/config/test-classification.yaml": {
       "policy": "replace",
-      "sha256": "d15acfdfc2ab70c043570ba0ced612edc699f1169e1571e18685946fbaee7c04"
+      "sha256": "f815e0246f04242fd3840f891c4976fee50ad4b70ace33a9f6c5d85cbe3e3cf9"
     },
     "AI-Agent/contracts/decision-log-v1.0.0.json": {
       "policy": "replace",
@@ -263,7 +271,7 @@
     },
     "AI-Agent/g06_baseline.json": {
       "policy": "add-only",
-      "sha256": "26667f46e84ef90be6b346a75be74f94ebaa50009542b881e02ad8c265d9d1d8"
+      "sha256": "104cd2a044b6d513cf06b081191d88bf4fbeced68fae4187ca03673b16d016ff"
     },
     "AI-Agent/gate_baseline.json": {
       "policy": "replace",
@@ -271,7 +279,7 @@
     },
     "AI-Agent/handoff.md": {
       "policy": "merge",
-      "sha256": "b2b6df772d4383ce65bb824f0563898362c281962a70e605fc7368d80f456bf6"
+      "sha256": "63ac7f3d383e4f33b871a27b4137b8409516ddf296efcbd524d998a74e9829e9"
     },
     "AI-Agent/last-runs.md": {
       "policy": "add-only",
@@ -303,7 +311,7 @@
     },
     "AI-Agent/schema/consumer-map.yaml": {
       "policy": "replace",
-      "sha256": "71f718b9edf5685d8f89c2dd0fc9a54e7e843c4ecc33c4545b87f61adfb4d915"
+      "sha256": "89fb3fd5cd72b4022a227f9e5ba5bd009c2aa0f1cf122618f6e3085056045d4b"
     },
     "AI-Agent/schema/contract-tests.py": {
       "policy": "replace",
@@ -553,6 +561,14 @@
       "policy": "replace",
       "sha256": "fd4baa312063372adb33b7eff0aa8610de2cbc9dfade74563120d1582b52af57"
     },
+    "AI-Agent/scripts/jev_calibrate-tests.py": {
+      "policy": "replace",
+      "sha256": "d12ab9f9cbfa0e394971b949b58e80826c0df0b6d000f55603049b5681ecd6a9"
+    },
+    "AI-Agent/scripts/jev_calibrate.py": {
+      "policy": "replace",
+      "sha256": "b33c84de07b8e4201ba765ade1773a1cce3016dd7e85f594748963814f4a0f69"
+    },
     "AI-Agent/scripts/jev_client-tests.py": {
       "policy": "replace",
       "sha256": "b102d8324d865354d6fb9e8deeb2e4ed5e8486484268016b74cfdf1dafc95197"
@@ -743,7 +759,7 @@
     },
     "AI-Agent/skills/proposal-critique-gate/SKILL.md": {
       "policy": "replace",
-      "sha256": "7994bb052b3f4b1439d879f277d9337026db1ac655e93e4b94a3214e0acfd289"
+      "sha256": "83367a1d12d50d73b3101487dc101a1030d6754b7c673c28c582231a7267e916"
     },
     "AI-Agent/skills/task-spec/SKILL.md": {
       "policy": "replace",
@@ -947,7 +963,7 @@
     },
     "CHANGELOG.md": {
       "policy": "replace",
-      "sha256": "25ded156c4183a1b094225164868fdfe849fbd4b430f60c40a61fbc02460c56e"
+      "sha256": "3271ac96abb19f3195730b522f3c29e67bcfc91654a12febd14379d973984cb6"
     },
     "CITATION.cff": {
       "policy": "replace",
@@ -995,7 +1011,7 @@
     },
     "README.md": {
       "policy": "merge",
-      "sha256": "7679edde8d53f1c33070e8f00bc7c3b58a78059603afaf5fad6ed623f5316fa1"
+      "sha256": "9dab284efdb2a972001f99b0fd625989514f75a8ff0e8df5efd41189e828bcff"
     },
     "SECURITY.md": {
       "policy": "replace",

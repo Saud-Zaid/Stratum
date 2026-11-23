@@ -20,9 +20,9 @@ created: 2026-10-23
 - **The approved files:** `AI-Agent/handoff.md` (the invariants and where everything lives), `AI-Agent/skills/vault-writer/SKILL.md` (how to write a note), `AI-Agent/scripts/state.py` for the current state.
 - **The enforcement gate:** every commit passes `audit.py --ratchet` (GATE CLEAR, blocking=0) — a non-conforming file stops the vault's backup.
 
-## 3. The tool layer (40 scripts)
+## 3. The tool layer (41 scripts)
 
-- **The source:** the live tree `AI-Agent/scripts/*.py` (a `*-tests.py` file is not a tool). Verdict by script: **40 ✅ sound, 0 ⚠️ incomplete, 0 ❌ broken** — a script is sound when it parses; `derive_live_arch.py` counts them live.
+- **The source:** the live tree `AI-Agent/scripts/*.py` (a `*-tests.py` file is not a tool). Verdict by script: **41 ✅ sound, 0 ⚠️ incomplete, 0 ❌ broken** — a script is sound when it parses; `derive_live_arch.py` counts them live.
 - **The front door:** `state`, `audit`, `section`, `outline`, `tool_gate`, `restore_ready`, `entry_map` are wrapped by the `stratum-*` console commands; every script answers `--help` with exit 0 and an unknown flag with exit 2.
 
 ## 4. Conformance with public patterns
