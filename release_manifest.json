@@ -935,11 +935,11 @@
     },
     "CHANGELOG.md": {
       "policy": "replace",
-      "sha256": "5b7ed9672cc3d22b643639be89ebdfd01cc8123af33ac2d36b171f59f5fa8eea"
+      "sha256": "4faa97225873ecff207453a0502f3f77e66756bcddea8a9f60c7e81e535e8272"
     },
     "CITATION.cff": {
       "policy": "replace",
-      "sha256": "19ab52c7f75164acb5c40a201d579a00897ba53641c42312dd8297e17918815b"
+      "sha256": "26053e09ee2e3a16b35dda018f8d94d241e3d43ad2e1baf1a1f9f2c39ab67cf3"
     },
     "CLAUDE.md": {
       "policy": "merge",
@@ -983,7 +983,7 @@
     },
     "README.md": {
       "policy": "merge",
-      "sha256": "475e56b8739096968b13f2d48b6ae7ed5b33ee55b867c3ac4e5c523e6fa9610e"
+      "sha256": "eaa36bded67e8a4943ee0548847f29a73bd378489e6a38e16850a7b3f4091d6d"
     },
     "SECURITY.md": {
       "policy": "replace",
@@ -1043,11 +1043,11 @@
     },
     "VERSION": {
       "policy": "replace",
-      "sha256": "8fc2138cb07104e971c7232bf9c96ece50e6c190c28679ab46af7a937d5ea8ef"
+      "sha256": "6ee72141c43fbc544035005cc916fbecd80a836825785a810273373a86ed3f59"
     },
     "pyproject.toml": {
       "policy": "replace",
-      "sha256": "854453472ae96f56fe0a164e42f702505cefb38441b44528a75a4cded1431c4e"
+      "sha256": "d5ec35c2b0bfd89273c8b25355ba50066e128198ed539c05fbe2bbf178bb8293"
     },
     "setup.cmd": {
       "policy": "replace",
@@ -1071,10 +1071,10 @@
     },
     "uv.lock": {
       "policy": "replace",
-      "sha256": "e28a82e412692a6428012335c4850e288d9a137e724cc2aa0b227cf134a05f4e"
+      "sha256": "e6520a3548baa82d1a3b7ae683bae3835a118f878375dd4c85a94ec88e2a6f16"
     }
   },
   "format_version": 2,
   "migrations": [],
-  "version": "1.0.0-beta.5"
+  "version": "1.0.0-beta.6"
 }

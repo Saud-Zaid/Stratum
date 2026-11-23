@@ -4,10 +4,13 @@ All notable changes to this project are documented in this file. The format foll
 
 ## [Unreleased]
 
+## [1.0.0-beta.6] - 2026-11-23
+
 ### Fixed
+- `1.0.0-beta.5` was tagged but never published: two seeded files under `AI-Agent/state/` kept the previous release date while `release_manifest.json` listed the new one, so the release build refused the tree. This version publishes the same changes as `1.0.0-beta.5` with a matching manifest.
 - The pull request list in release notes starts at the last published release, so a tag that was never published does not hide the pull requests merged before it.
 
-## [1.0.0-beta.5] - 2026-11-23
+## [1.0.0-beta.5] - 2026-11-23 [YANKED]
 
 ### Added
 - `CONTRIBUTING.md` (how a change reaches `main`, how a release is made, and the release branch every version has from `1.0.0-beta.5` on) and `SECURITY.md` (private vulnerability reporting through GitHub).
@@ -98,7 +101,8 @@ All notable changes to this project are documented in this file. The format foll
 ### Security
 - Plugin code is fetched over HTTPS and verified against pinned SHA-256 hashes; no plugin token is stored in the repository.
 
-[Unreleased]: https://github.com/Saud-Zaid/Stratum/compare/v1.0.0-beta.5...HEAD
+[Unreleased]: https://github.com/Saud-Zaid/Stratum/compare/v1.0.0-beta.6...HEAD
+[1.0.0-beta.6]: https://github.com/Saud-Zaid/Stratum/compare/v1.0.0-beta.4...v1.0.0-beta.6
 [1.0.0-beta.5]: https://github.com/Saud-Zaid/Stratum/compare/v1.0.0-beta.4...v1.0.0-beta.5
 [1.0.0-beta.4]: https://github.com/Saud-Zaid/Stratum/compare/v1.0.0-beta.3...v1.0.0-beta.4
 [1.0.0-beta.3]: https://github.com/Saud-Zaid/Stratum/compare/v1.0.0-beta.2...v1.0.0-beta.3
