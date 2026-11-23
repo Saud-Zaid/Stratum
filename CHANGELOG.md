@@ -4,6 +4,9 @@ All notable changes to this project are documented in this file. The format foll
 
 ## [Unreleased]
 
+### Fixed
+- The pull request list in release notes starts at the last published release, so a tag that was never published does not hide the pull requests merged before it.
+
 ## [1.0.0-beta.5] - 2026-11-23
 
 ### Added
