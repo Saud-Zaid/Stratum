@@ -73,13 +73,18 @@ def bubble(cid, bid, ts, ty, tool=None, status="completed", err=None, params=Non
     db.execute("insert into cursorDiskKV values (?,?)", (f"bubbleId:{cid}:{bid}", json.dumps(o)))
 
 
-bubble("c-real", "b1", "2026-11-19T10:00:00.000Z", 1)
-bubble("c-real", "b2", "2026-11-19T10:00:05.000Z", 2, "read_file")
-bubble("c-real", "b3", "2026-11-19T10:00:09.000Z", 2, "edit_file", status="error", err="file does not exist: /x/y.md and key " + SECRET)
-bubble("c-real", "b4", "2026-11-19T10:00:12.000Z", 2, "run_terminal_cmd", status="loading")
-bubble("c-real", "b5", "2026-11-19T10:00:15.000Z", 2)
+def at(seconds):
+    """An ISO time `seconds` after the real composer was created: fixed dates fall out of the window as the calendar moves."""
+    return datetime.datetime.fromtimestamp((now_ms - 3600_000) / 1000 + seconds, datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z")
+
+
+bubble("c-real", "b1", at(0), 1)
+bubble("c-real", "b2", at(5), 2, "read_file")
+bubble("c-real", "b3", at(9), 2, "edit_file", status="error", err="file does not exist: /x/y.md and key " + SECRET)
+bubble("c-real", "b4", at(12), 2, "run_terminal_cmd", status="loading")
+bubble("c-real", "b5", at(15), 2)
 bubble("c-old", "b1", "2026-08-01T10:00:00.000Z", 1)
-bubble("empty-state-draft", "b1", "2026-11-19T10:00:00.000Z", 1)           # the placeholder draft even with a message in it is not a session
+bubble("empty-state-draft", "b1", at(0), 1)           # the placeholder draft even with a message in it is not a session
 db.commit()
 db.close()
 before = (dbp.stat().st_mtime_ns, dbp.stat().st_size)
