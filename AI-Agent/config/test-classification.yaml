@@ -273,3 +273,8 @@ stratum_core:
   lane: parallel
   t05_actions:
   - u40_zero_arabic_ast
+- path: AI-Agent/scripts/jev_calibrate-tests.py
+  runner: direct
+  lane: parallel
+  t05_actions:
+  - u40_zero_arabic_ast

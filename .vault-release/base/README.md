@@ -103,6 +103,21 @@ The `proposal-critique-gate` skill ends each design decision at a gate. Without 
 
 **Asking Jev well.** One question asks about one thing and fits in one sentence of at most 40 words (the client warns when it does not). Write each option's criterion in terms that can be seen in the evidence, not as an opinion, and never hint at the answer you want. Give a gate at least three pieces of evidence from disk. A refusal or an error from Jev is never a pass.
 
+### Calibrate before you rely on it
+
+A high confidence does not prove that a question tells right from wrong: an empty file can pass a badly worded question at 0.99. Before an agent relies on a question it asks Jev **more than once** (a check that runs on every note, every task or every release), calibrate it on cases from your own work:
+
+1. Write the question's exact wording in `AI-Agent/config/jev-questions.yaml` (the shipped example `evidence_supports_claim` shows the format).
+2. Label cases for it in its case file under `AI-Agent/config/jev-golden/`: passes, fails, and **deceptive** fails that look like passes. Label each case by what is true, not by what you expect Jev to say.
+3. Check the files and see the cost, then run it:
+
+   ```sh
+   .venv/bin/python AI-Agent/scripts/jev_calibrate.py          # checks the files and prints the plan; sends nothing
+   .venv/bin/python AI-Agent/scripts/jev_calibrate.py --run    # asks Jev for every case (paid calls)
+   ```
+
+A question is usable when it has **no false accept** (no fail case passed) and rejects at most 15% of the pass cases. It reports `PROVISIONAL` until it has at least 29 deceptive cases, the number needed to certify that false accepts stay under 10% (Neyman-Pearson umbrella threshold, Tong, Feng and Li 2018). Any change to the wording, the criteria, the threshold or the model makes it a new question, so calibrate it again; the tool refuses a registry whose model differs from the server's. The cases are your own data, and they go to OpenRouter like any other question. A one-off gate (`jev_gate` in the `proposal-critique-gate` skill) is not calibrated this way; it follows the skill's confidence and thin-margin rules.
+
 ## License
 
 Stratum is licensed under the [PolyForm Noncommercial License 1.0.0](LICENSE). Third-party components keep their own licenses; see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
