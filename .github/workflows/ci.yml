@@ -2,6 +2,7 @@ name: ci
 
 on:
   push:
+    branches: [main]   # a pull request runs its own build; a push to its branch would run the same tests twice
   pull_request:
 
 permissions:

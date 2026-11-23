@@ -1,0 +1,21 @@
+# Groups the merged pull requests in the generated release notes by label.
+changelog:
+  exclude:
+    labels:
+      - release
+  categories:
+    - title: Features
+      labels:
+        - feature
+    - title: Fixes
+      labels:
+        - fix
+    - title: Documentation
+      labels:
+        - docs
+    - title: CI and tooling
+      labels:
+        - ci
+    - title: Other changes
+      labels:
+        - "*"

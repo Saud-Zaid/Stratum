@@ -33,13 +33,25 @@
       "policy": "replace",
       "sha256": "41a1616d3e10b2a18da9c94ee267eb74396b437dad93696e072f2dec35d6fa93"
     },
+    ".github/pull_request_template.md": {
+      "policy": "replace",
+      "sha256": "1eec44189b9f6826c9445fddb608d6dd49b6f096bfa1676624061737c259795e"
+    },
+    ".github/release.yml": {
+      "policy": "replace",
+      "sha256": "63bbde1d32048fdc0cf3f311f84210b5254930f6b8700f299a4e6891d377b4ce"
+    },
     ".github/workflows/ci.yml": {
       "policy": "replace",
-      "sha256": "cefec8edca0c0f784a654a5da5ca45547fe58ed93a292924a6b41e66cd5650cd"
+      "sha256": "66a54eb3f74cbb58af4434f32df627a4ea9d22ed9ddb427551e01edf616c5b85"
+    },
+    ".github/workflows/pr-title.yml": {
+      "policy": "replace",
+      "sha256": "95b7199f0c3ed2064709a51d70ffe85589ee72c1ce19f3bef0eddc84a04b5161"
     },
     ".github/workflows/release.yml": {
       "policy": "replace",
-      "sha256": "1831f47b4ee44fd597593c146bd9660670b99445d3a429c2393e16ddf3de7372"
+      "sha256": "df48d73bf6b424a558e55e9074407ba015cf6e3be14efc9ce7e0c57f0aaeccb4"
     },
     ".gitignore": {
       "policy": "replace",
@@ -923,7 +935,7 @@
     },
     "CHANGELOG.md": {
       "policy": "replace",
-      "sha256": "99e6c30eb665f45eb44440b41bb8a17dc3005db911a12a0e928946c8dd653417"
+      "sha256": "1ab3bc94f63d4968a1d4124664ce28dd004a29583b3915509a0144e7ad3111c7"
     },
     "CITATION.cff": {
       "policy": "replace",
