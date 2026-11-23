@@ -719,7 +719,7 @@ finally:
     for _sf in _P(L.__file__).resolve().parent.glob("*.py"):
         if not _sf.name.endswith("-tests.py"):
             _used |= set(L.script_import_roots(_sf.read_text(encoding="utf-8", errors="replace")))
-    _supplied_per_run = {"mcp"}      # jev_client imports it lazily and its docstring runs it as `uv run --with 'mcp<2'`: not a requirements pin in a release
+    _supplied_per_run = {"mcp", "httpx"}   # the Jev client and server: the jev extra (mcp<2, which brings httpx) or `uv run --with` supplies them, not a requirements pin
     ok("T75-e7-every-allowed-library-a-script-imports-is-pinned-in-requirements (DEP001)", (allowed & _used) - _supplied_per_run <= provided, sorted((allowed & _used) - _supplied_per_run - provided))
     transitive_ok = {"mdurl"}      # pinned because markdown-it-py needs it; no script imports it
     unused = [d for d in main_pins if d not in transitive_ok and not (mods_of(d) & allowed)]
@@ -730,7 +730,7 @@ finally:
     extra_mods = {m for ms in L.SCRIPT_THIRD_PARTY.values() for m in ms}
     extra_provided = set().union(*(mods_of(d) for d in extra_pins))
     if _RF is not None:
-        ok("T77-e7-per-script-libraries-are-pinned-in-their-own-requirements-file (DEP001)", extra_mods <= extra_provided, sorted(extra_mods - extra_provided))
+        ok("T77-e7-per-script-libraries-are-pinned-in-their-own-requirements-file (DEP001)", extra_mods - _supplied_per_run <= extra_provided, sorted(extra_mods - _supplied_per_run - extra_provided))
     else:
         print("SKIP T77: no per-script requirements file in this tree (no script here has per-script libraries)")
     stdlib_pins = [d for d in main_pins + extra_pins if d.replace("-", "_") in sys.stdlib_module_names]

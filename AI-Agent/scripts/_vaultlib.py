@@ -25,9 +25,9 @@ VAULT = Path(os.environ.get("VAULT") or Path(__file__).resolve().parents[2])   #
 SKIP_DIRS = {".git", ".obsidian", ".trash", "node_modules", ".venv", ".vault-release"}
 
 # ADR-006 import policy, one copy for audit.py and impact.py (AD13 E7: the two copies had drifted, `mediator` was allowed by one only)
-ALLOWED_THIRD_PARTY = {"_vaultlib", "markdown_it", "mdit_py_plugins", "yaml", "tiktoken", "mcp"}    # ADR-006 as amended by ADR-009 (tiktoken) and ADR-020 (mcp<2)
+ALLOWED_THIRD_PARTY = {"_vaultlib", "markdown_it", "mdit_py_plugins", "yaml", "tiktoken", "mcp", "jsonschema"}    # ADR-006 as amended by ADR-009 (tiktoken), ADR-020 (mcp<2) and the owner's approval of jsonschema (2026-11-23, intent-system contracts)
 # ADR-021: libraries allowed for ONE named script only (stem -> set). Every other script still gets the global list above.
-SCRIPT_THIRD_PARTY: dict[str, set[str]] = {}   # per-script third-party libraries: none in this release
+SCRIPT_THIRD_PARTY: dict[str, set[str]] = {"jev_mcp": {"httpx"}}   # per-script third-party libraries: httpx comes with mcp<2 (the jev extra)
 SCHEMA_UNITS = {"decision_ledger", "mediator"}    # schema/ units are vault-local; read-only consumers may import them (ADR-006 as amended 2026-10-19)
 
 

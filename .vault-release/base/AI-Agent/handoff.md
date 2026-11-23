@@ -57,5 +57,5 @@ Only these files instruct an agent: `AGENTS.md` (root door) with its two thin po
 - **Scripts:** `AI-Agent/scripts/` (`stratum-*` commands wrap the front-door ones; every script answers `--help`)
 - **Agent tools and capabilities:** `03-Resources/Agent-Capabilities.md`
 - **Task spec template:** `Templates/Task-Spec.md`
-- **Jev decision client (optional):** `AI-Agent/scripts/jev_client.py` — used only when the Jev decision server is enabled; the server path comes from `JEV_MCP_PATH` or `JEV_CONFIG`.
+- **Jev decision gate (optional):** the client `AI-Agent/scripts/jev_client.py` runs the shipped server `AI-Agent/scripts/jev_mcp.py` (or the one `JEV_MCP_PATH` names) and passes it `OPENROUTER_API_KEY` from the environment. Used only when the owner has set it up (README, "Optional: the Jev decision gate"); otherwise the gate is a structured critique.
 - **Python environment:** `pyproject.toml` + `uv.lock` pin the dependencies; `./setup.sh` (or `setup.cmd` on Windows) creates `.venv`, installs the lock and enables the pre-commit hook.

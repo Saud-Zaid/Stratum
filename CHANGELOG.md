@@ -4,6 +4,12 @@ All notable changes to this project are documented in this file. The format foll
 
 ## [Unreleased]
 
+### Added
+- The Jev decision server `AI-Agent/scripts/jev_mcp.py` ships next to its client, and the README explains how to enable the Jev gate with one OpenRouter API key.
+
+### Fixed
+- `jev_client.py` passes `OPENROUTER_API_KEY` (and `JEV_MODEL`, `JEV_TIMEOUT`) to the server it starts, so a key exported in the shell works on any machine, and it runs the server with the locked environment when `--extra jev` is installed.
+
 ## [1.0.0-beta.6] - 2026-11-23
 
 ### Fixed
